@@ -1,11 +1,21 @@
 name: Publish Python 🐍 distribution 📦 to PyPI
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
   release:
     types: [published]
 
 jobs:
   build-and-publish:
+    if: >
+      github.event_name == 'release' &&
+      github.event.action == 'published' &&
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
