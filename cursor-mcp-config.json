@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "stackhawk": {
+      "command": "python3",
+      "args": ["-m", "stackhawk_mcp.server"],
+      "env": {
+        "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+      }
+    }
+  }
+} 
