@@ -33,5 +33,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/stackhawk-mcp:latest,${{ secrets.DOCKERHUB_USERNAME }}/stackhawk-mcp:${{ github.ref_name }}
+          tags: stackhawk/stackhawk-mcp:latest,stackhawk/stackhawk-mcp:${{ github.ref_name }}
           platforms: linux/amd64,linux/arm64 
