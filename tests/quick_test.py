@@ -6,12 +6,14 @@ Quick test to verify pagination fix
 import asyncio
 import os
 import sys
+import pytest
 
 # Add the current directory to the path so we can import the server
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from stackhawk_mcp.server import StackHawkMCPServer
 
+@pytest.mark.asyncio
 async def test_pagination():
     """Test that pagination now works correctly"""
     

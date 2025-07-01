@@ -8,6 +8,7 @@ import asyncio
 import os
 import sys
 from pathlib import Path
+import pytest
 
 # Add the project root to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -16,6 +17,7 @@ from dotenv import load_dotenv
 from stackhawk_mcp.server import StackHawkMCPServer
 
 
+@pytest.mark.asyncio
 async def test_authentication():
     """Test basic authentication with StackHawk API"""
     print("🔍 Testing StackHawk API authentication...")
@@ -57,6 +59,7 @@ async def test_authentication():
         return False
 
 
+@pytest.mark.asyncio
 async def test_basic_functionality():
     """Test basic MCP server functionality"""
     print("\n🔧 Testing MCP server functionality...")
@@ -99,6 +102,7 @@ async def test_basic_functionality():
         return False
 
 
+@pytest.mark.asyncio
 async def test_mcp_resources():
     """Test MCP resource reading"""
     print("\n📚 Testing MCP resources...")

@@ -11,6 +11,7 @@ import json
 import os
 import sys
 from datetime import datetime
+import pytest
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -18,6 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from stackhawk_mcp.server import StackHawkMCPServer
 
 
+@pytest.mark.asyncio
 async def test_vulnerability_scoping():
     """Test the difference between organization-wide and application-specific vulnerabilities"""
     
