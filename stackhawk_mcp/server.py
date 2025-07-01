@@ -894,6 +894,9 @@ class StackHawkMCPServer:
                 debug_print(f"Error in list_tools: {e}")
                 raise
 
+        # Set as instance attribute so it's available for FastAPI
+        self._list_tools_handler = handle_list_tools
+
         @self.server.call_tool()
         async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             """Handle tool calls"""
@@ -980,6 +983,10 @@ class StackHawkMCPServer:
                 return [types.TextContent(type="text", text=json.dumps(error_result, indent=2))]
 
         debug_print("MCP handlers setup complete")
+        self._call_tool_handler = handle_call_tool
+
+    async def call_tool(self, name: str, arguments: dict):
+        return await self._call_tool_handler(name, arguments)
 
     async def _get_schema(self) -> Dict[str, Any]:
         """Get the StackHawk YAML schema with caching"""
@@ -3742,6 +3749,9 @@ hawk scan --host https://your-app-domain.com
         """Cleanup resources"""
         debug_print("Cleaning up StackHawk client...")
         await self.client.close()
+
+    async def list_tools(self):
+        return await self._list_tools_handler()
 
 
 async def main():
