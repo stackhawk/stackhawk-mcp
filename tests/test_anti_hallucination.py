@@ -60,8 +60,11 @@ async def test_anti_hallucination():
         result = await server._validate_field_exists(field)
         if not result["success"]:
             print(f"✅ Correctly rejected: {field}")
-            print(f"   Error: {result['error']}")
-            print(f"   Suggestion: {result['suggestion']}")
+            if 'error' in result:
+                print(f"   Error: {result['error']}")
+            else:
+                print(f"   Message: {result.get('message', 'No error/message')}")
+            print(f"   Suggestion: {result.get('suggestion', '')}")
         else:
             print(f"❌ Should have rejected: {field}")
     
@@ -72,7 +75,7 @@ async def test_anti_hallucination():
     sections = ["app", "hawk", "hawkAddOn", "tags"]
     
     for section in sections:
-        result = await server._get_schema_fields(section=section)
+        result = await server._get_stackhawk_schema(section=section)
         if "fields" in result:
             print(f"✅ {section} section: {result['total_fields']} fields")
             # Show first few fields
@@ -85,40 +88,20 @@ async def test_anti_hallucination():
     
     # Test 4: Get all available fields
     print("4. Getting all available fields...")
-    result = await server._get_schema_fields()
+    result = await server._get_stackhawk_schema()
     if "all_fields" in result:
         print(f"✅ Total fields available: {result['total_fields']}")
         print(f"   Available sections: {', '.join(result['available_sections'])}")
         print(f"   Schema URL: {result['schema_url']}")
     else:
-        print(f"❌ Failed to get all fields: {result['error']}")
-    
-    print("\n" + "="*50 + "\n")
-    
-    # Test 5: Configuration suggestions
-    print("5. Testing configuration suggestions...")
-    use_cases = [
-        "web application",
-        "REST API testing", 
-        "authentication required",
-        "production deployment"
-    ]
-    
-    for use_case in use_cases:
-        result = await server._suggest_configuration(use_case, environment="dev")
-        if "recommendations" in result:
-            print(f"✅ {use_case}: {len(result['recommendations'])} recommendations")
-            for rec in result["recommendations"][:2]:  # Show first 2
-                print(f"   - {rec['recommendation']}")
-        else:
-            print(f"❌ Failed to get suggestions for {use_case}: {result['error']}")
+        print(f"❌ Failed to get all fields: {result.get('error', result.get('message', 'Unknown error'))}")
     
     print("\n" + "="*50 + "\n")
     
     # Test 6: Demonstrate how to prevent hallucination
     print("6. Anti-Hallucination Workflow Example:")
     print("   Step 1: Always validate fields before suggesting them")
-    print("   Step 2: Use get_schema_fields to see what's actually available")
+    print("   Step 2: Use get_stackhawk_schema to see what's actually available")
     print("   Step 3: Use suggest_configuration for AI-powered recommendations")
     print("   Step 4: Validate final configuration before deployment")
     

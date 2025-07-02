@@ -76,8 +76,8 @@ async def test_vulnerability_scoping():
                 print(f"        Severity: {finding.get('findingRisk', 'Unknown')}")
                 print()
         
-        # Test 2: Application-specific vulnerabilities (NEW METHOD - CORRECT)
-        print("\n4. Testing Application-Specific Vulnerabilities (NEW METHOD)...")
+        # Test 2: Application-specific vulnerabilities (Unified Method)
+        print("\n4. Testing Application-Specific Vulnerabilities (Unified Method)...")
         app_vulns = await server._get_application_vulnerabilities(
             app_id=app_id,
             org_id=org_id,
@@ -85,20 +85,37 @@ async def test_vulnerability_scoping():
             include_remediation=True,
             max_results=50
         )
-        
         print("✅ Application-Specific Results:")
         print(f"   - Application: {app_vulns.get('applicationName', 'Unknown')}")
         print(f"   - Total Findings: {app_vulns.get('totalFindings', 0)}")
         print(f"   - Note: {app_vulns.get('note', 'No note')}")
-        
         severity_breakdown = app_vulns.get('severityBreakdown', {})
         print(f"   - Severity Breakdown: High={severity_breakdown.get('High', 0)}, Medium={severity_breakdown.get('Medium', 0)}, Low={severity_breakdown.get('Low', 0)}")
-        
-        # Show first few findings
         findings = app_vulns.get('findings', [])
         if findings:
             print(f"\n   Sample Application-Specific Findings:")
             for i, finding in enumerate(findings[:3]):
+                print(f"     {i+1}. {finding.get('findingName', 'Unknown')}")
+                print(f"        Severity: {finding.get('findingRisk', 'Unknown')}")
+                print(f"        Status: {finding.get('status', 'Unknown')}")
+                print()
+        # Test 2b: Application-specific vulnerabilities (Triage Mode)
+        print("\n4b. Testing Application-Specific Vulnerabilities (Triage Mode)...")
+        app_vulns_triage = await server._get_application_vulnerabilities(
+            app_id=app_id,
+            org_id=org_id,
+            triage_mode=True,
+            max_results=100
+        )
+        print("✅ Application-Specific Triage Results:")
+        print(f"   - Application: {app_vulns_triage.get('applicationName', 'Unknown')}")
+        print(f"   - Total Triage Findings: {app_vulns_triage.get('totalFindings', 0)}")
+        print(f"   - Triage Mode: {app_vulns_triage.get('triageMode', False)}")
+        print(f"   - Failure Threshold: {app_vulns_triage.get('failureThreshold', 'High/Medium')}")
+        triage_findings = app_vulns_triage.get('findings', [])
+        if triage_findings:
+            print(f"\n   Sample Triage Findings:")
+            for i, finding in enumerate(triage_findings[:3]):
                 print(f"     {i+1}. {finding.get('findingName', 'Unknown')}")
                 print(f"        Severity: {finding.get('findingRisk', 'Unknown')}")
                 print(f"        Status: {finding.get('status', 'Unknown')}")

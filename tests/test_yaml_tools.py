@@ -41,7 +41,7 @@ async def test_yaml_tools():
         print("✅ Configuration created successfully!")
         print("YAML Output:")
         print(result["yaml"])
-        print(f"Filename: {result['filename']}")
+        print(f"Config path: {result['config_path']}")
     else:
         print(f"❌ Failed to create configuration: {result['error']}")
     
@@ -133,16 +133,5 @@ hawk:
             print(f"Cache age: {schema_result['cache_age']}")
     else:
         print(f"❌ Failed to get schema: {schema_result['error']}")
-    
-    print("\n" + "="*50 + "\n")
-    
-    # Test 6: Refresh schema cache
-    print("6. Refreshing schema cache...")
-    refresh_result = await server._refresh_schema_cache()
-    if refresh_result["success"]:
-        print("✅ Schema cache refreshed successfully!")
-        print(f"Message: {refresh_result['message']}")
-    else:
-        print(f"❌ Failed to refresh schema cache: {refresh_result['error']}")
     
     print("\n=== Testing Complete ===") 

@@ -32,6 +32,35 @@ def test_server_class():
     except Exception as e:
         assert False, f"Failed to instantiate server class: {e}"
 
+def test_tech_flag_filtering(monkeypatch):
+    """Test that set_application_tech_flags only sends valid tech flags"""
+    from stackhawk_mcp.server import StackHawkClient
+    client = StackHawkClient("dummy_key")
+    called = {}
+    async def fake_make_request(method, endpoint, **kwargs):
+        called['method'] = method
+        called['endpoint'] = endpoint
+        called['json'] = kwargs.get('json')
+        return {"success": True}
+    client._make_request = fake_make_request
+    # Mix of valid and invalid flags
+    input_flags = {
+        "Language.Python": True,
+        "Language.Java": False,
+        "Db.MySQL": True,
+        "NotAFlag": True,
+        "": False,
+        "WS.Apache": True
+    }
+    import asyncio
+    asyncio.run(client.set_application_tech_flags("app123", input_flags))
+    sent_flags = called['json']['techFlags']
+    # Only valid flags should be present
+    assert set(sent_flags.keys()) == {"Language.Python", "Language.Java", "Db.MySQL", "WS.Apache"}
+    # Invalid keys should not be present
+    assert "NotAFlag" not in sent_flags
+    assert "" not in sent_flags
+
 # Optional: allow manual run for quick feedback
 if __name__ == "__main__":
     test_server_import()

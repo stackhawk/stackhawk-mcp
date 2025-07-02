@@ -46,21 +46,6 @@ async def test_sensitive_data_functionality():
         print(f"✅ Connected to organization: {org_name} (ID: {org_id})")
         print()
         
-        # Test 1: Get Sensitive Data Types
-        print("1. Testing sensitive data types...")
-        try:
-            result = await server._get_sensitive_data_types(org_id)
-            if "error" not in result:
-                print("✅ Sensitive data types retrieved successfully!")
-                data_types = result.get("sensitiveDataTypes", {})
-                print(f"   Available data types: {list(data_types.keys()) if isinstance(data_types, dict) else 'N/A'}")
-            else:
-                print(f"⚠️  Could not get sensitive data types: {result['error']}")
-        except Exception as e:
-            print(f"❌ Failed to get sensitive data types: {e}")
-        
-        print("\n" + "="*60 + "\n")
-        
         # Test 2: Get Sensitive Data Report
         print("2. Testing sensitive data report generation...")
         try:
@@ -181,8 +166,10 @@ async def test_sensitive_data_functionality():
                 app_id = applications[0]["id"]
                 app_name = applications[0]["name"]
                 
-                result = await server._get_application_sensitive_data(
-                    app_id=app_id,
+                result = await server._get_sensitive_data(
+                    target_type="application",
+                    target_id=app_id,
+                    org_id=org_id,
                     data_type_filter="All",
                     include_details=True,
                     max_results=50
@@ -209,9 +196,10 @@ async def test_sensitive_data_functionality():
                 repo_id = repositories[0]["id"]
                 repo_name = repositories[0]["name"]
                 
-                result = await server._get_repository_sensitive_data(
+                result = await server._get_sensitive_data(
+                    target_type="repository",
+                    target_id=repo_id,
                     org_id=org_id,
-                    repo_id=repo_id,
                     data_type_filter="All",
                     include_details=True,
                     max_results=50
@@ -305,15 +293,6 @@ async def test_sensitive_data_api_endpoints():
                     print()
         except Exception as e:
             print(f"⚠️  Could not get sensitive data findings: {e}")
-        
-        # Test 2: Get Sensitive Data Types
-        print("\n2. Testing get_sensitive_data_types endpoint...")
-        try:
-            types_response = await server.client.get_sensitive_data_types(org_id)
-            print("✅ Sensitive data types retrieved successfully")
-            print(f"   Types: {types_response}")
-        except Exception as e:
-            print(f"⚠️  Could not get sensitive data types: {e}")
         
         # Test 3: Get Sensitive Data Summary
         print("\n3. Testing get_sensitive_data_summary endpoint...")
