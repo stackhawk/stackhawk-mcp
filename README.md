@@ -39,7 +39,12 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
    pip install stackhawk-mcp
    # Requires Python 3.10 or higher
    ```
-2. **Set your StackHawk API key:**
+2. **Install locally from the repo:**
+   ```bash
+   pip install --user .
+   # Run this command from the root of the cloned repository
+   ```
+3. **Set your StackHawk API key:**
    ```bash
    export STACKHAWK_API_KEY="your-api-key-here"
    ```
