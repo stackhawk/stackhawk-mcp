@@ -1,5 +1,8 @@
 # StackHawk MCP Server
 
+**Current Version: 0.1.0**
+_Requires Python 3.10 or higher_
+
 A Model Context Protocol (MCP) server for integrating with StackHawk's security scanning platform. Provides security analytics, YAML configuration management, sensitive data/threat surface analysis, and anti-hallucination tools for LLMs.
 
 ---
@@ -16,6 +19,7 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
 - [Example Configurations](#example-configurations)
 - [Contributing](#contributing)
 - [License](#license)
+- [Integrating with LLMs and IDEs](#integrating-with-llms-and-ides)
 
 ---
 
@@ -30,16 +34,12 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
 
 ## Installation
 
-1. **Clone the repository:**
+1. **Install via pip:**
    ```bash
-   git clone <repository-url>
-   cd stackhawk-mcp
+   pip install stackhawk-mcp
+   # Requires Python 3.10 or higher
    ```
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Set your StackHawk API key:**
+2. **Set your StackHawk API key:**
    ```bash
    export STACKHAWK_API_KEY="your-api-key-here"
    ```
@@ -62,6 +62,96 @@ python -m stackhawk_mcp.http_server
 ```bash
 pytest
 ```
+
+### Integrating with LLMs and IDEs
+
+StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-powered developer environments, enabling security analytics, YAML validation, and anti-hallucination features directly in your workflow.
+
+#### Cursor (AI Coding Editor)
+- **Setup:**
+  - You can install `stackhawk-mcp` globally with pip, or use [pipx](https://pipx.pypa.io/) for isolated environments (recommended for CLI tools):
+    ```bash
+    pipx install stackhawk-mcp
+    ```
+  - Run the MCP server locally: `python -m stackhawk_mcp.server` or the HTTP server: `python -m stackhawk_mcp.http_server`.
+  - In Cursor, add a custom tool provider pointing to your local MCP server endpoint (e.g., `http://localhost:8080/mcp`).
+  - Configure your API key as an environment variable: `export STACKHAWK_API_KEY=your-api-key`.
+  - Example `cursor-mcp-config.json` using pipx:
+    ```json
+    {
+      "mcpServers": {
+        "stackhawk": {
+          "command": "pipx",
+          "args": ["run", "stackhawk-mcp", "-m", "stackhawk_mcp.server"],
+          "env": {
+            "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+          }
+        }
+      }
+    }
+    ```
+  - Or, if `stackhawk-mcp` provides a CLI entry point:
+    ```json
+    {
+      "mcpServers": {
+        "stackhawk": {
+          "command": "pipx",
+          "args": ["run", "stackhawk-mcp"],
+          "env": {
+            "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+          }
+        }
+      }
+    }
+    ```
+  - Example `cursor-mcp-config.json` using python directly:
+    ```json
+    {
+      "mcpServers": {
+        "stackhawk": {
+          "command": "python3",
+          "args": ["-m", "stackhawk_mcp.server"],
+          "env": {
+            "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+          }
+        }
+      }
+    }
+    ```
+- **Usage:**
+  - Use Cursor's tool invocation to call StackHawk MCP tools (e.g., vulnerability search, YAML validation).
+  - Example prompt: `Validate this StackHawk YAML config for errors.`
+
+#### OpenAI, Anthropic, and Other LLMs
+- **Setup:**
+  - Deploy the MCP HTTP server and expose it to your LLM system (local or cloud).
+  - Use the LLM's tool-calling or function-calling API to connect to the MCP endpoint.
+  - Pass the required arguments (e.g., org_id, yaml_content) as specified in the tool schemas.
+- **Example API Call:**
+  ```json
+  {
+    "method": "tools/call",
+    "params": {
+      "name": "validate_stackhawk_config",
+      "arguments": {"yaml_content": "..."}
+    }
+  }
+  ```
+- **Best Practices:**
+  - Use anti-hallucination tools to validate field names and schema compliance.
+  - Always check the tool's output for warnings or suggestions.
+
+#### IDEs like Windsurf
+- **Setup:**
+  - Add StackHawk MCP as a tool provider or extension in your IDE, pointing to the local or remote MCP server endpoint.
+  - Configure environment variables as needed.
+- **Usage:**
+  - Invoke security analytics, YAML validation, or sensitive data tools directly from the IDE's command palette or tool integration panel.
+
+#### General Tips
+- Ensure the MCP server is running and accessible from your LLM or IDE environment.
+- Review the [Available Tools & API](#available-tools--api) section for supported operations.
+- For advanced integration, see the example tool usage in this README or explore the codebase for custom workflows.
 
 ---
 
@@ -215,4 +305,4 @@ Contributions are welcome! Please open issues or pull requests for bug fixes, ne
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Apache License 2.0. See [LICENSE](LICENSE) for details.

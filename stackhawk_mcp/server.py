@@ -44,7 +44,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("stackhawk-mcp")
 
-STACKHAWK_MCP_VERSION = "1.0.0"
+STACKHAWK_MCP_VERSION = "0.1.0"
 
 
 def debug_print(message):
