@@ -21,7 +21,7 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ github.TOKEN }}
-          approvers: stackhawk/engineering
+          approvers: engineering
       - name: Check CI status for this commit
         id: check_ci
         uses: actions/github-script@v7
