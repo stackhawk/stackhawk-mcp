@@ -21,9 +21,10 @@ app.add_middleware(
 
 # Get API key from environment
 API_KEY = os.environ.get("STACKHAWK_API_KEY", "changeme")
+BASE_URL = os.environ.get("STACKHAWK_BASE_URL", "https://api.stackhawk.com")
 
 # Create the MCP server instance
-mcp_server = StackHawkMCPServer(api_key=API_KEY)
+mcp_server = StackHawkMCPServer(api_key=API_KEY, base_url=BASE_URL)
 
 # Store active SSE connections
 active_connections = {}

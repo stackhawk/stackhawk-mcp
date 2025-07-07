@@ -597,9 +597,9 @@ class StackHawkClient:
 class StackHawkMCPServer:
     """StackHawk MCP Server implementation"""
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, base_url: str = "https://api.stackhawk.com"):
         debug_print("Initializing StackHawkMCPServer...")
-        self.client = StackHawkClient(api_key)
+        self.client = StackHawkClient(api_key, base_url)
         self.server = Server("stackhawk-mcp")
         self._schema_cache: Optional[Dict[str, Any]] = None
         self._schema_cache_time: Optional[datetime] = None
@@ -2380,16 +2380,18 @@ async def main():
     import os
 
     api_key = os.environ.get("STACKHAWK_API_KEY")
+    base_url = os.environ.get("STACKHAWK_BASE_URL", "https://api.stackhawk.com")
     if not api_key:
         debug_print("ERROR: STACKHAWK_API_KEY environment variable is required")
         sys.exit(1)
 
     debug_print(f"API key found: {api_key[:20]}...")
+    debug_print(f"Base URL: {base_url}")
 
     server = None
     try:
         debug_print("Creating StackHawkMCPServer...")
-        server = StackHawkMCPServer(api_key)
+        server = StackHawkMCPServer(api_key, base_url)
         debug_print("Running server...")
         await server.run()
     except KeyboardInterrupt:
