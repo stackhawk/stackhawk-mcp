@@ -55,4 +55,6 @@ jobs:
           prerelease: false
 
 permissions:
-  issues: write 
+  actions: read
+  issues: write
+  contents: write 
