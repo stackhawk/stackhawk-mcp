@@ -30,4 +30,5 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         # No password needed! Uses OIDC trusted publisher 
 permissions:
+  contents: read
   id-token: write
