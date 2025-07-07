@@ -12,10 +12,6 @@ on:
 
 jobs:
   build-and-publish:
-    if: >
-      github.event_name == 'release' &&
-      github.event.action == 'published' &&
-      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
