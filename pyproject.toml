@@ -7,7 +7,7 @@ name = "stackhawk-mcp"
 version = "0.1.1"
 description = "StackHawk MCP Server for Security Analytics and Developer Integration"
 authors = [{name = "StackHawk, Inc.", email = "support@stackhawk.com"}]
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-stackhawk-mcp = "stackhawk_mcp.server:main"
+stackhawk-mcp = "stackhawk_mcp.__main__:cli"
 
 [project.urls]
 Homepage = "https://github.com/stackhawk/stackhawk-mcp"
@@ -46,3 +46,6 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["stackhawk_mcp*"]
