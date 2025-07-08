@@ -35,15 +35,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Generate GitHub App token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.HAWKY_APP_ID }}
+          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+      - name: Set up git for pushing
+        run: |
+          git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
+      - name: Set git user for HawkyMcBuilderFace bot
+        run: |
+          git config user.name "HawkyMcBuilderFace[bot]"
+          git config user.email "222944+HawkyMcBuilderFace[bot]@users.noreply.github.com"
       - name: Get version from pyproject.toml
         id: get_version
         run: |
           VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d '"' -f2)
-          echo "::set-output name=version::$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Create and push tag for current version
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag v${{ steps.get_version.outputs.version }}
           git push origin v${{ steps.get_version.outputs.version }}
 
@@ -55,18 +66,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Generate GitHub App token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
         with:
-          python-version: '3.11'
-      - name: Install bumpver
+          app_id: ${{ secrets.HAWKY_APP_ID }}
+          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+      - name: Set up git for pushing
         run: |
-          python -m pip install --upgrade pip
-          pip install bumpver
+          git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
+      - name: Set git user for HawkyMcBuilderFace bot
+        run: |
+          git config user.name "HawkyMcBuilderFace[bot]"
+          git config user.email "222944+HawkyMcBuilderFace[bot]@users.noreply.github.com"
       - name: Bump patch version with bumpver
-        run: bumpver update --patch --no-tag --commit
+        run: bumpver update --patch --commit
       - name: Push version bump commit
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git push 
