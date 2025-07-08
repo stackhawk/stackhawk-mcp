@@ -14,10 +14,6 @@ tag_scope = "default"
 "stackhawk_mcp/__init__.py" = [
     '__version__ = "{version}"'
 ]
-# Server version constant
-"stackhawk_mcp/server.py" = [
-    'STACKHAWK_MCP_VERSION = "{version}"'
-]
 # HTTP server version in JSON
 "stackhawk_mcp/http_server.py" = [
     '"version": "{version}"'
