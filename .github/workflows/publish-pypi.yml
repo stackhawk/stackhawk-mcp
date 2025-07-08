@@ -28,7 +28,19 @@ jobs:
           pip install build bumpver
       - name: Bump minor version with bumpver
         if: github.ref == 'refs/heads/main'
-        run: bumpver update --minor --no-tag --commit
+        run: bumpver update --minor --commit
+      - name: Get version from pyproject.toml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d '"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Create and push tag for new version
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${{ steps.get_version.outputs.version }}
+          git push origin v${{ steps.get_version.outputs.version }}
       - name: Push version bump commit
         if: github.ref == 'refs/heads/main'
         run: |
