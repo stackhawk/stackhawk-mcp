@@ -1,6 +1,6 @@
 # StackHawk MCP Server
 
-**Current Version: 0.1.0**
+**Current Version: 0.1.1**
 _Requires Python 3.10 or higher_
 
 A Model Context Protocol (MCP) server for integrating with StackHawk's security scanning platform. Provides security analytics, YAML configuration management, sensitive data/threat surface analysis, and anti-hallucination tools for LLMs.
@@ -39,7 +39,12 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
    pip install stackhawk-mcp
    # Requires Python 3.10 or higher
    ```
-2. **Set your StackHawk API key:**
+2. **Install locally from the repo:**
+   ```bash
+   pip install --user .
+   # Run this command from the root of the cloned repository
+   ```
+3. **Set your StackHawk API key:**
    ```bash
    export STACKHAWK_API_KEY="your-api-key-here"
    ```

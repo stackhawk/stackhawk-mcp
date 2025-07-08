@@ -1,0 +1,24 @@
+[bumpver]
+current_version = "0.1.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump: version {old_version} → {new_version}"
+tag_message = "v{new_version}"
+tag_scope = "default"
+
+[bumpver.file_patterns]
+# pyproject.toml
+"pyproject.toml" = [
+    'version = "{version}"'
+]
+# Python package __init__
+"stackhawk_mcp/__init__.py" = [
+    '__version__ = "{version}"'
+]
+# README version badge or text
+"README.md" = [
+    '**Current Version: {version}**'
+]
+# DXT file version
+"stackhawk-mcp.dxt" = [
+    '"version": "{version}"'
+] 
