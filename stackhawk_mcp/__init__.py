@@ -5,6 +5,6 @@ This package provides security monitoring and analytics capabilities by integrat
 with the StackHawk API through the Model Context Protocol (MCP).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "StackHawk MCP Team"
 __email__ = "support@stackhawk.com"
