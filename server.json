@@ -1,0 +1,277 @@
+{
+    "name": "stackhawk-mcp",
+    "displayName": "StackHawk MCP Server",
+    "description": "Model Context Protocol (MCP) server that integrates StackHawk security analytics, YAML configuration management, sensitive data/threat surface analysis, and anti-hallucination tools into IDEs, LLMs, and developer workflows.",
+    "version": "0.1.0",
+    "author": {
+      "name": "StackHawk",
+      "email": "support@stackhawk.com",
+      "url": "https://www.stackhawk.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/stackhawk/stackhawk-mcp"
+    },
+    "license": "Apache-2.0",
+    "categories": [
+      "security",
+      "devops",
+      "developer-tools"
+    ],
+    "keywords": [
+      "mcp",
+      "stackhawk",
+      "security",
+      "vulnerability",
+      "api-security",
+      "developer-tools"
+    ],
+    "server": {
+      "executable": "python",
+      "args": [
+        "-m",
+        "stackhawk_mcp.server"
+      ],
+      "env": {
+        "STACKHAWK_API_KEY": "<YOUR_API_KEY>"
+      },
+      "transport": "stdio",
+      "installation": {
+        "pip": "stackhawk-mcp>=0.1.0"
+      }
+    },
+    "capabilities": {
+      "resources": [
+        {
+          "uri": "stackhawk://auth/user",
+          "name": "Current User",
+          "description": "Information about the authenticated user and their organizations.",
+          "mimeType": "application/json"
+        },
+        {
+          "uri": "stackhawk://applications",
+          "name": "Applications Overview",
+          "description": "Overview of all applications accessible to the authenticated user.",
+          "mimeType": "application/json"
+        },
+        {
+          "uri": "stackhawk://vulnerabilities/summary",
+          "name": "Vulnerability Summary",
+          "description": "High-level vulnerability metrics and severity breakdown.",
+          "mimeType": "application/json"
+        }
+      ],
+      "tools": [
+        {
+          "name": "get_organization_info",
+          "description": "Retrieve detailed information about a StackHawk organization.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "list_applications",
+          "description": "List applications for an organization.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" },
+              "query": { "type": "string" },
+              "page_size": { "type": "integer" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "search_vulnerabilities",
+          "description": "Search for vulnerabilities by severity.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" },
+              "severity": {
+                "type": "string",
+                "enum": ["High", "Medium", "Low"]
+              }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "generate_security_dashboard",
+          "description": "Generate an executive security dashboard.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "create_stackhawk_config",
+          "description": "Create a StackHawk configuration file.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "project_name": { "type": "string" },
+              "environment": { "type": "string" }
+            },
+            "required": ["project_name"]
+          }
+        },
+        {
+          "name": "validate_field_exists",
+          "description": "Validate whether a field exists in the StackHawk YAML schema to prevent LLM hallucination and ensure schema compliance.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "field_path": { "type": "string" }
+            },
+            "required": ["field_path"]
+          }
+        },
+        {
+          "name": "validate_stackhawk_config",
+          "description": "Validate a StackHawk YAML configuration for correctness, schema compliance, and best practices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_content": { "type": "string" }
+            },
+            "required": ["config_content"]
+          }
+        },
+        {
+          "name": "get_stackhawk_schema",
+          "description": "Retrieve the configuration schema definition.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        {
+          "name": "get_sensitive_data",
+          "description": "Retrieve sensitive data from scans.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "app_id": { "type": "string" }
+            },
+            "required": ["app_id"]
+          }
+        },
+        {
+          "name": "map_sensitive_data_surface",
+          "description": "Map sensitive data surfaces across the organization.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "setup_stackhawk_for_project",
+          "description": "Set up StackHawk scanning for a project.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "project_name": { "type": "string" }
+            },
+            "required": ["project_name"]
+          }
+        },
+        {
+          "name": "get_stackhawk_scan_instructions",
+          "description": "Retrieve instructions to run a StackHawk scan.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_path": { "type": "string" }
+            }
+          }
+        },
+        {
+          "name": "run_stackhawk_scan",
+          "description": "Run a StackHawk scan on the specified configuration.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_path": { "type": "string" }
+            }
+          }
+        },
+        {
+          "name": "get_app_findings_for_triage",
+          "description": "Retrieve findings for triage for an application.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "app_id": { "type": "string" },
+              "config_path": { "type": "string" },
+              "config_content": { "type": "string" }
+            },
+            "required": ["app_id"]
+          }
+        },
+        {
+          "name": "get_sensitive_data_report",
+          "description": "Get a report of sensitive data findings.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "analyze_sensitive_data_trends",
+          "description": "Analyze sensitive data exposure trends.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" },
+              "time_range": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "get_critical_sensitive_data",
+          "description": "Retrieve critical severity sensitive data findings.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        },
+        {
+          "name": "generate_sensitive_data_summary",
+          "description": "Generate a summary report of sensitive data.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "org_id": { "type": "string" }
+            },
+            "required": ["org_id"]
+          }
+        }
+      ]
+    },
+    "documentation": {
+      "homepage": "https://www.stackhawk.com",
+      "gettingStarted": "https://pypi.org/project/stackhawk-mcp/0.1.0/",
+      "readme": "https://github.com/stackhawk/stackhawk-mcp#readme",
+      "icon": "https://www.stackhawk.com/favicon-32x32.png"
+    }
+  }
+  
