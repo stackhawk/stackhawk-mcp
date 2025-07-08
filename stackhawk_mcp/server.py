@@ -35,6 +35,7 @@ from mcp.types import (
 )
 import mcp.server.stdio
 import mcp.types as types
+from stackhawk_mcp import __version__
 
 # Configure logging to stderr so Claude Desktop can see it
 logging.basicConfig(
@@ -44,7 +45,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("stackhawk-mcp")
 
-STACKHAWK_MCP_VERSION = "0.1.0"
+STACKHAWK_MCP_VERSION = __version__
 
 
 def debug_print(message):

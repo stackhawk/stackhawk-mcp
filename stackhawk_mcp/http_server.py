@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 from stackhawk_mcp.server import StackHawkMCPServer
+from stackhawk_mcp import __version__
 
 app = FastAPI()
 
@@ -71,7 +72,7 @@ async def handle_initialize_request(request_data):
             },
             "serverInfo": {
                 "name": "StackHawk MCP",
-                "version": "0.1.0"
+                "version": __version__
             }
         }
     )
@@ -237,7 +238,7 @@ async def root():
         "id": 1,
         "result": {
             "serverName": "StackHawk MCP",
-            "serverVersion": "0.1.0",
+            "serverVersion": __version__,
             "protocolVersion": "v1"
         }
     })
@@ -249,7 +250,7 @@ async def root_post():
         "id": 1,
         "result": {
             "serverName": "StackHawk MCP",
-            "serverVersion": "0.1.0",
+            "serverVersion": __version__,
             "protocolVersion": "v1"
         }
     })
