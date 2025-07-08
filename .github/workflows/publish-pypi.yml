@@ -10,6 +10,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -34,6 +38,10 @@ jobs:
         run: |
           VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d '"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Set up git for pushing
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Create and push tag for new version
         if: github.ref == 'refs/heads/main'
         run: |
@@ -52,7 +60,4 @@ jobs:
           python -m build
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # No password needed! Uses OIDC trusted publisher 
-permissions:
-  contents: read
-  id-token: write
+        # No password needed! Uses OIDC trusted publisher
