@@ -14,10 +14,6 @@ tag_scope = "default"
 "stackhawk_mcp/__init__.py" = [
     '__version__ = "{version}"'
 ]
-# HTTP server version in JSON
-"stackhawk_mcp/http_server.py" = [
-    '"version": "{version}"'
-]
 # README version badge or text
 "README.md" = [
     '**Current Version: {version}**'
