@@ -38,18 +38,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Test GH_TOKEN permissions
-        run: |
-          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}
-        shell: bash
       - name: Set git user for hawkdeploy
         run: |
-          git config user.name "${{ secrets.GH_DEPLOY_USER }}"
-          git config user.email "${{ secrets.GH_DEPLOY_EMAIL }}"
-      - name: Set up git for pushing
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Show git user and remote
         run: |
           git config --get user.name
@@ -82,11 +74,13 @@ jobs:
           fetch-depth: 0
       - name: Set git user for hawkdeploy
         run: |
-          git config user.name "${{ secrets.GH_DEPLOY_USER }}"
-          git config user.email "${{ secrets.GH_DEPLOY_EMAIL }}"
-      - name: Set up git for pushing
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Install dependencies
         run: |
-          git remote set-url origin https://${{ secrets.GH_DEPLOY_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .
       - name: Bump patch version with bumpver
         run: bumpver update --patch --commit
       - name: Push version bump commit
