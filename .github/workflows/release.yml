@@ -3,23 +3,24 @@ name: Release
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-  issues: write
-  id-token: write
-
 jobs:
   approval:
     name: Manual Approval
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.HAWKY_APP_ID }}
+          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Wait for manual approval
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ secrets.GITHUB_TOKEN }}
+          secret: ${{ steps.generate_token.outputs.token }}
           issue-title: "Release Approval for ${{ github.ref_name }}"
-          issue-body: "Please approve this release to publish to PyPI and Docker."
-          approvers: sgerlach,kcberg,danielhopkins,clamey,Bwvolleyball
+          issue-body: "Please approve the release for ${{ github.ref_name }}."
+          approvers: engineering
           minimum-approvals: 1
           mode: issue
           fail-on-denial: true
@@ -41,8 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
-          fetch-depth: 0
+          persist-credentials: 'false'
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -65,8 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
-          fetch-depth: 0
+          persist-credentials: 'false'
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
