@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stackhawk-mcp"
-version = "0.1.2"
+version = "0.1.3"
 description = "StackHawk MCP Server for Security Analytics and Developer Integration"
 authors = [{name = "StackHawk, Inc.", email = "support@stackhawk.com"}]
 license = "Apache-2.0"
