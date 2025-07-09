@@ -14,30 +14,19 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - name: Check for bumpver commit
-        id: skip_bumpver
-        run: |
-          if [[ "${{ github.event.head_commit.message }}" == *"bump: version"* ]]; then
-            echo "Bumpver commit detected, failing job to prevent workflow loop."
-            exit 1
-          fi
       - uses: actions/checkout@v4
-        if: steps.skip_bumpver.outcome == 'success'
         with:
           persist-credentials: 'false'
       - name: Set up Python ${{ matrix.python-version }}
-        if: steps.skip_bumpver.outcome == 'success'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        if: steps.skip_bumpver.outcome == 'success'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install .
       - name: Run tests
-        if: steps.skip_bumpver.outcome == 'success'
         run: |
           pytest --maxfail=1 --disable-warnings
 
