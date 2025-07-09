@@ -45,6 +45,7 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Create and push tag for current version (with verbose logging)
         run: |
+          git remote -v
           git tag v${{ steps.get_version.outputs.version }}
           git fetch origin --tags --verbose
           GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
