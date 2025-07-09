@@ -76,10 +76,6 @@ jobs:
         run: |
           git config user.name "HawkyMcBuilderFace[bot]"
           git config user.email "222944+HawkyMcBuilderFace[bot]@users.noreply.github.com"
-      - name: Set version from tag
-        run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/v}
-          bumpver update --set-version $TAG_NAME --commit
       - name: Build package
         run: |
           python -m build
