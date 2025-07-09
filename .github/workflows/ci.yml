@@ -41,6 +41,7 @@ jobs:
           pytest --maxfail=1 --disable-warnings
 
   tag-version:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -52,34 +53,34 @@ jobs:
             exit 0
           fi
       - uses: actions/checkout@v4
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         with:
           persist-credentials: 'false'
       - name: Generate GitHub App token
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         id: generate_token
         uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.HAWKY_APP_ID }}
           private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Set up git for pushing
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
       - name: Show current branch and HEAD
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git branch -a
           git status
           git rev-parse --abbrev-ref HEAD
       - name: Get version from pyproject.toml
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         id: get_version
         run: |
           VERSION=$(grep '^version =' pyproject.toml | head -1 | cut -d '"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Create and push tag for current version (with verbose logging)
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git remote -v
           git tag v${{ steps.get_version.outputs.version }}
@@ -87,6 +88,7 @@ jobs:
           GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
 
   bump-version:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [test, tag-version]
     runs-on: ubuntu-latest
     steps:
@@ -98,35 +100,35 @@ jobs:
             exit 0
           fi
       - uses: actions/checkout@v4
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         with:
           persist-credentials: 'false'
       - name: Generate GitHub App token
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         id: generate_token
         uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.HAWKY_APP_ID }}
           private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Set up git for pushing
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
       - name: Install dependencies
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install .
       - name: Set git user for HawkyMcBuilderFace bot
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git config user.name "HawkyMcBuilderFace[bot]"
           git config user.email "hawkymcbuilderface[bot]@users.noreply.github.com"
       - name: Bump patch version with bumpver
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: bumpver update --patch --commit
       - name: Push version bump commit
-        if: steps.skip_bumpver.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git push 
