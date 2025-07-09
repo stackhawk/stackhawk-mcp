@@ -39,8 +39,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main
-          fetch-depth: 0
+          persist-credentials: 'false'
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -72,4 +71,4 @@ jobs:
           fi
       - name: Push version bump commit
         run: |
-          git push origin HEAD:main 
+          git push
