@@ -70,3 +70,8 @@ jobs:
       - name: Push version bump commit
         run: |
           git push 
+      - name: Test GH_TOKEN permissions
+        run: |
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}
+        shell: bash 
