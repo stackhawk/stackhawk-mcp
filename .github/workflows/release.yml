@@ -43,6 +43,11 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
+      - name: Test GH_TOKEN permissions
+        run: |
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}
+        shell: bash
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -54,11 +59,6 @@ jobs:
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-      - name: Test GH_TOKEN permissions
-        run: |
-          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}
-        shell: bash
       - name: Set git user for GitHub Actions bot
         run: |
           git config user.name "github-actions[bot]"
