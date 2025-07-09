@@ -29,6 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: approval
     steps:
+      - name: Test GH_TOKEN permissions
+        run: |
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}
+        shell: bash
       - name: Confirm release tag exists
         run: |
           echo "Release tag is ${{ github.ref }}"
@@ -79,13 +84,14 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
+      - name: Test GH_TOKEN permissions
+        run: |
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}
+        shell: bash
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-      - name: Set git user for GitHub Actions bot
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx

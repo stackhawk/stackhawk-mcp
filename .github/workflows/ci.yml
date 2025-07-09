@@ -40,15 +40,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Test GH_TOKEN permissions
+        run: |
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}
+        shell: bash
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-      - name: Log git remote and user
-        run: |
-          git remote -v
-          git config --list
-          git config user.name || true
-          git config user.email || true
       - name: Create and push tag for current version (with verbose logging)
         run: |
           git tag v${{ steps.get_version.outputs.version }}
@@ -66,17 +65,8 @@ jobs:
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-      - name: Set git user for GitHub Actions bot
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Bump patch version with bumpver
         run: bumpver update --patch --commit
       - name: Push version bump commit
         run: |
           git push 
-      - name: Test GH_TOKEN permissions
-        run: |
-          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}
-        shell: bash 
