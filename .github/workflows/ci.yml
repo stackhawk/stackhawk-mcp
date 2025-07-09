@@ -41,6 +41,11 @@ jobs:
         with:
           app_id: ${{ secrets.HAWKY_APP_ID }}
           private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+      - name: Test token permissions
+        run: |
+          curl -v -H "Authorization: token ${{ steps.generate_token.outputs.token }}" \
+            https://api.github.com/repos/stackhawk/stackhawk-mcp
+        shell: bash
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
