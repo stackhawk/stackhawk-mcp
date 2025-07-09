@@ -24,10 +24,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install .
-      - name: Set git user for github-actions
+      - name: Generate GitHub App token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.HAWKY_APP_ID }}
+          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+      - name: Set up git for pushing
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
       - name: Bump minor version with bumpver
         run: bumpver update --minor --commit
       - name: Push version bump commit
