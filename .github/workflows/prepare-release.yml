@@ -2,6 +2,15 @@ name: Prepare Release
 
 on:
   workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Type of version bump'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -21,8 +30,8 @@ jobs:
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
 
-  bump-minor-version:
-    name: Bump Minor Version
+  bump-version:
+    name: Bump Version
     if: needs.check-bumpver.outputs.should_run == 'true'
     needs: check-bumpver
     runs-on: ubuntu-latest
@@ -52,10 +61,15 @@ jobs:
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
       - name: Set git user for HawkyMcBuilderFace bot
         run: |
-          git config user.name "HawkyMcBuilderFace[bot]"
-          git config user.email "hawkymcbuilderface[bot]@users.noreply.github.com"
-      - name: Bump minor version with bumpver
-        run: bumpver update --minor --commit
+          git config user.name "${{ secrets.HAWKY_APP_USER }}"
+          git config user.email "${{ secrets.HAWKY_APP_USER_EMAIL }}"
+      - name: Bump version with bumpver
+        run: |
+          if [[ "${{ github.event.inputs.bump_type }}" == "major" ]]; then
+            bumpver update --major --commit
+          else
+            bumpver update --minor --commit
+          fi
       - name: Push version bump commit
         run: |
           git push origin HEAD:main 
