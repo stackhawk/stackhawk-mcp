@@ -85,6 +85,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install .
+      - name: Set git user for HawkyMcBuilderFace bot
+        run: |
+          git config user.name "HawkyMcBuilderFace[bot]"
+          git config user.email "hawkymcbuilderface[bot]@users.noreply.github.com"
       - name: Bump patch version with bumpver
         run: bumpver update --patch --commit
       - name: Push version bump commit
