@@ -14,11 +14,6 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: Test GH_TOKEN permissions
-        run: |
-          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}
-        shell: bash
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:

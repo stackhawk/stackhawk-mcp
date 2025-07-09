@@ -48,11 +48,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
-      - name: Test GH_TOKEN permissions
-        run: |
-          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}
-        shell: bash
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
