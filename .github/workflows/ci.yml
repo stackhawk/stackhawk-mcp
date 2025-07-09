@@ -44,19 +44,30 @@ jobs:
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
+      - name: Log git remote and user
+        run: |
+          git remote -v
+          git config --get user.name || echo "No user.name set"
+          git config --get user.email || echo "No user.email set"
+          git config --list
       - name: Set git user for HawkyMcBuilderFace bot
         run: |
           git config user.name "HawkyMcBuilderFace[bot]"
           git config user.email "222944+HawkyMcBuilderFace[bot]@users.noreply.github.com"
+      - name: Log git user after config
+        run: |
+          git config --get user.name
+          git config --get user.email
       - name: Get version from pyproject.toml
         id: get_version
         run: |
           VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d '"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      - name: Create and push tag for current version
+      - name: Create and push tag for current version (with verbose logging)
         run: |
           git tag v${{ steps.get_version.outputs.version }}
-          git push origin v${{ steps.get_version.outputs.version }}
+          git fetch origin --tags --verbose
+          GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
 
   bump-version:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
