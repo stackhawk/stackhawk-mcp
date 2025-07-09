@@ -58,7 +58,7 @@ jobs:
           pip install build bumpver
       - name: Set up git for pushing
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://${{ secrets.GH_DEPLOY_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Set git user for deploy
         run: |
           git config user.name "${{ secrets.GH_DEPLOY_USER }}"
@@ -86,7 +86,7 @@ jobs:
         shell: bash
       - name: Set up git for pushing
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://${{ secrets.GH_DEPLOY_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
