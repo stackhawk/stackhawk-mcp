@@ -46,7 +46,7 @@ jobs:
           git config user.email "${{ secrets.GH_DEPLOY_EMAIL }}"
       - name: Set up git for pushing
         run: |
-          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://${{ secrets.GH_DEPLOY_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Show git user and remote
         run: |
           git config --get user.name
@@ -83,7 +83,7 @@ jobs:
           git config user.email "${{ secrets.GH_DEPLOY_EMAIL }}"
       - name: Set up git for pushing
         run: |
-          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://${{ secrets.GH_DEPLOY_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Bump patch version with bumpver
         run: bumpver update --patch --commit
       - name: Push version bump commit
