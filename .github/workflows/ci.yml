@@ -46,7 +46,7 @@ jobs:
 
   tag-version:
     if: needs.check-bumpver.outputs.should_run == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [test, check-bumpver]
+    needs: check-bumpver
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,7 +80,7 @@ jobs:
 
   bump-version:
     if: needs.check-bumpver.outputs.should_run == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [test, tag-version, check-bumpver]
+    needs: [check-bumpver, tag-version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
