@@ -311,7 +311,3 @@ Contributions are welcome! Please open issues or pull requests for bug fixes, ne
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE) for details.
-
-## GitHub Actions
-
-Workflows are being updated to improve git permissions for CI/CD automation. See the `fix/git-permission-issues` branch for details.
