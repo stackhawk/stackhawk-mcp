@@ -7,54 +7,55 @@ permissions:
   contents: write
 
 jobs:
-  bump-minor-version:
-    name: Bump Minor Version
+  check-bumpver:
     runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
     steps:
       - name: Check for bumpver commit
-        id: skip_bumpver
+        id: check
         run: |
           if [[ "${{ github.event.head_commit.message }}" == *"bump: version"* ]]; then
-            echo "Bumpver commit detected, skipping job."
-            exit 0
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
           fi
+
+  bump-minor-version:
+    name: Bump Minor Version
+    if: needs.check-bumpver.outputs.should_run == 'true'
+    needs: check-bumpver
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout code
-        if: steps.skip_bumpver.outcome == 'success'
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
       - name: Set up Python
-        if: steps.skip_bumpver.outcome == 'success'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install dependencies
-        if: steps.skip_bumpver.outcome == 'success'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install .
       - name: Generate GitHub App token
-        if: steps.skip_bumpver.outcome == 'success'
         id: generate_token
         uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.HAWKY_APP_ID }}
           private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Set up git for pushing
-        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
       - name: Set git user for HawkyMcBuilderFace bot
-        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git config user.name "HawkyMcBuilderFace[bot]"
           git config user.email "hawkymcbuilderface[bot]@users.noreply.github.com"
       - name: Bump minor version with bumpver
-        if: steps.skip_bumpver.outcome == 'success'
         run: bumpver update --minor --commit
       - name: Push version bump commit
-        if: steps.skip_bumpver.outcome == 'success'
         run: |
           git push origin HEAD:main 
