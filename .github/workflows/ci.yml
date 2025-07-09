@@ -68,6 +68,11 @@ jobs:
           git tag v${{ steps.get_version.outputs.version }}
           git fetch origin --tags --verbose
           GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
+      - name: Log generated GitHub App token (for debugging)
+        run: |
+          echo "Generated GitHub App token:"
+          echo "${{ steps.generate_token.outputs.token }}" | sed 's/./& /g' | head -c 100
+        shell: bash
 
   bump-version:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
