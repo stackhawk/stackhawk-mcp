@@ -14,11 +14,6 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: Test GH_TOKEN permissions
-        run: |
-          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}
-        shell: bash
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -50,6 +45,7 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Create and push tag for current version (with verbose logging)
         run: |
+          git remote -v
           git tag v${{ steps.get_version.outputs.version }}
           git fetch origin --tags --verbose
           GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
