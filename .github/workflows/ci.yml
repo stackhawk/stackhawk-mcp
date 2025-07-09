@@ -63,16 +63,16 @@ jobs:
         run: |
           VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d '"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      - name: Create and push tag for current version (with verbose logging)
-        run: |
-          git tag v${{ steps.get_version.outputs.version }}
-          git fetch origin --tags --verbose
-          GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
       - name: Log generated GitHub App token (for debugging)
         run: |
           echo "Generated GitHub App token:"
           echo "${{ steps.generate_token.outputs.token }}" | sed 's/./& /g' | head -c 100
         shell: bash
+      - name: Create and push tag for current version (with verbose logging)
+        run: |
+          git tag v${{ steps.get_version.outputs.version }}
+          git fetch origin --tags --verbose
+          GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
 
   bump-version:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
