@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    if: !contains(github.event.head_commit.message, 'bump: version')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,7 +31,7 @@ jobs:
           pytest --maxfail=1 --disable-warnings
 
   tag-version:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: !contains(github.event.head_commit.message, 'bump: version') && github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -64,7 +65,7 @@ jobs:
           GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
 
   bump-version:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: !contains(github.event.head_commit.message, 'bump: version') && github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [test, tag-version]
     runs-on: ubuntu-latest
     steps:

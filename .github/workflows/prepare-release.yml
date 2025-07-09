@@ -10,6 +10,7 @@ jobs:
   bump-minor-version:
     name: Bump Minor Version
     runs-on: ubuntu-latest
+    if: !contains(github.event.head_commit.message, 'bump: version')
     steps:
       - uses: actions/checkout@v4
         with:
