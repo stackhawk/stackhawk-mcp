@@ -46,11 +46,6 @@ jobs:
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
-      - name: Show git user and remote
-        run: |
-          git config --get user.name
-          git config --get user.email
-          git remote -v
       - name: Show current branch and HEAD
         run: |
           git branch -a
