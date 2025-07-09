@@ -311,3 +311,27 @@ Contributions are welcome! Please open issues or pull requests for bug fixes, ne
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE) for details.
+
+## Release and Version Bumping
+
+Version bumps are managed via the "Prepare Release" GitHub Actions workflow.
+When triggering this workflow, you can select whether to bump the minor or major version.
+The workflow will automatically update version files, commit, and push the changes to main.
+
+> **Note:** The workflow is protected against infinite loops caused by automated version bump commits.
+
+## GitHub Actions Authentication
+
+All CI/CD git operations use a GitHub App token for authentication.
+The git user and email are set from the repository secrets `HAWKY_APP_USER` and `HAWKY_APP_USER_EMAIL`.
+
+## Workflow Protections
+
+Workflows are designed to skip jobs if the latest commit is an automated version bump, preventing workflow loops.
+
+## How to Trigger a Release
+
+1. Go to the "Actions" tab on GitHub.
+2. Select the "Prepare Release" workflow.
+3. Click "Run workflow" and choose the desired bump type (minor or major).
+4. The workflow will handle the rest!
