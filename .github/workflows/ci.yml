@@ -46,7 +46,7 @@ jobs:
           git config user.email "${{ secrets.GH_DEPLOY_EMAIL }}"
       - name: Set up git for pushing
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Show git user and remote
         run: |
           git config --get user.name
@@ -57,6 +57,11 @@ jobs:
           git branch -a
           git status
           git rev-parse --abbrev-ref HEAD
+      - name: Get version from pyproject.toml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version =' pyproject.toml | head -1 | cut -d '"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Create and push tag for current version (with verbose logging)
         run: |
           git remote -v
@@ -78,7 +83,7 @@ jobs:
           git config user.email "${{ secrets.GH_DEPLOY_EMAIL }}"
       - name: Set up git for pushing
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Bump patch version with bumpver
         run: bumpver update --patch --commit
       - name: Push version bump commit
