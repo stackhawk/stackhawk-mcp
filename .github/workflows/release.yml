@@ -20,7 +20,7 @@ jobs:
           secret: ${{ steps.generate_token.outputs.token }}
           issue-title: "Release Approval for ${{ github.ref_name }}"
           issue-body: "Please approve the release for ${{ github.ref_name }}."
-          approvers: sgerlach,kcberg,danielhopkins,clamey,Bwvolleyball
+          approvers: engineering
           minimum-approvals: 1
           mode: issue
           fail-on-denial: true
