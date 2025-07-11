@@ -72,3 +72,34 @@ jobs:
       - name: Push version bump commit
         run: |
           git push
+
+  tag-version:
+    name: Tag Version
+    if: needs.check-bumpver.outputs.should_run == 'true'
+    needs: [check-bumpver, bump-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: 'false'
+      - name: Generate GitHub App token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.HAWKY_APP_ID }}
+          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+      - name: Set up git for pushing
+        run: |
+          git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
+      - name: Get version from pyproject.toml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version =' pyproject.toml | head -1 | cut -d '"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Create and push tag for current version (with verbose logging)
+        run: |
+          git remote -v
+          git tag v${{ steps.get_version.outputs.version }}
+          git fetch origin --tags --verbose
+          git push origin v${{ steps.get_version.outputs.version }}
