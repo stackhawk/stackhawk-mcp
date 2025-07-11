@@ -151,4 +151,4 @@ jobs:
         run: bumpver update --patch --commit
       - name: Push patch version bump commit
         run: |
-          git push
+          git push origin HEAD:main
