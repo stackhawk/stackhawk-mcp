@@ -103,3 +103,41 @@ jobs:
           git tag v${{ steps.get_version.outputs.version }}
           git fetch origin --tags --verbose
           git push origin v${{ steps.get_version.outputs.version }}
+
+  bump-patch-version:
+    name: Bump Patch Version
+    if: needs.check-bumpver.outputs.should_run == 'true'
+    needs: [check-bumpver, bump-version, tag-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: 'false'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .
+      - name: Generate GitHub App token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.HAWKY_APP_ID }}
+          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+      - name: Set up git for pushing
+        run: |
+          git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
+      - name: Set git user for HawkyMcBuilderFace bot
+        run: |
+          git config user.name "${{ secrets.HAWKY_APP_USER }}"
+          git config user.email "${{ secrets.HAWKY_APP_USER_EMAIL }}"
+      - name: Bump patch version with bumpver
+        run: bumpver update --patch --commit
+      - name: Push patch version bump commit
+        run: |
+          git push
