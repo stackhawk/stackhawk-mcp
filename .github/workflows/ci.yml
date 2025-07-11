@@ -76,7 +76,7 @@ jobs:
           git remote -v
           git tag v${{ steps.get_version.outputs.version }}
           git fetch origin --tags --verbose
-          GIT_TRACE_PACKET=1 GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push origin v${{ steps.get_version.outputs.version }}
+          git push origin v${{ steps.get_version.outputs.version }}
 
   bump-version:
     if: needs.check-bumpver.outputs.should_run == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
