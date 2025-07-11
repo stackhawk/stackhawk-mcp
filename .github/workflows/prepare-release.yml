@@ -143,6 +143,10 @@ jobs:
         run: |
           git config user.name "${{ secrets.HAWKY_APP_USER }}"
           git config user.email "${{ secrets.HAWKY_APP_USER_EMAIL }}"
+      - name: Fetch and checkout latest main
+        run: |
+          git fetch origin main
+          git checkout origin/main
       - name: Bump patch version with bumpver
         run: bumpver update --patch --commit
       - name: Push patch version bump commit
