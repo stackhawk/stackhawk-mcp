@@ -91,9 +91,13 @@ jobs:
         with:
           app_id: ${{ secrets.HAWKY_APP_ID }}
           private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
-      - name: Set up git for pushing
+      - name: Set up git for pulling latest
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
+      - name: Fetch and checkout latest main
+        run: |
+          git fetch origin main
+          git checkout origin/main
       - name: Get version from pyproject.toml
         id: get_version
         run: |
