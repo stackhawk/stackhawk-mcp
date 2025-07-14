@@ -1,6 +1,6 @@
 # StackHawk MCP Server
 
-**Current Version: 1.0.1**
+**Current Version: 0.1.7**
 _Requires Python 3.10 or higher_
 
 A Model Context Protocol (MCP) server for integrating with StackHawk's security scanning platform. Provides security analytics, YAML configuration management, sensitive data/threat surface analysis, and anti-hallucination tools for LLMs.
