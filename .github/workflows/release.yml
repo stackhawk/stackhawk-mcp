@@ -21,7 +21,7 @@ jobs:
           issue-title: "Release Approval for ${{ github.ref_name }}"
           issue-body: "Please approve the release for ${{ github.ref_name }}."
           approvers: engineering
-          minimum-approvals: 1
+          minimum-approvals: 2
           mode: issue
           fail-on-denial: true
 
