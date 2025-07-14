@@ -120,4 +120,4 @@ jobs:
         run: bumpver update --patch --commit
       - name: Push version bump commit
         run: |
-          git push 
+          git push origin HEAD:main
