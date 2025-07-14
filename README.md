@@ -34,20 +34,72 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
 
 ## Installation
 
-1. **Install via pip:**
-   ```bash
-   pip install stackhawk-mcp
-   # Requires Python 3.10 or higher
-   ```
-2. **Install locally from the repo:**
-   ```bash
-   pip install --user .
-   # Run this command from the root of the cloned repository
-   ```
-3. **Set your StackHawk API key:**
-   ```bash
-   export STACKHAWK_API_KEY="your-api-key-here"
-   ```
+### Option 1: Install via pip
+```bash
+pip install stackhawk-mcp
+# Requires Python 3.10 or higher
+```
+
+### Option 2: Install locally from the repo
+```bash
+pip install --user .
+# Run this command from the root of the cloned repository
+```
+
+### Option 3: Install with uv (Recommended for development)
+[`uv`](https://docs.astral.sh/uv/) is a fast Python package installer and resolver, written in Rust. It's an excellent alternative to pip and pipx for managing Python projects.
+
+#### Prerequisites
+Install uv from [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
+
+#### Installation Options with uv
+
+**Option A: Install globally with uv**
+```bash
+uv pip install stackhawk-mcp
+```
+
+**Option B: Install in isolated environment with uv**
+```bash
+uv pip install --system stackhawk-mcp
+```
+
+**Option C: Development setup with uv**
+```bash
+# Clone the repository
+git clone <repository-url>
+cd stackhawk-mcp
+
+# Initialize virtual environment and install dependencies
+uv sync
+
+# Install the package in development mode
+uv pip install -e .
+
+# Set your StackHawk API key
+export STACKHAWK_API_KEY="your-api-key-here"
+```
+
+**Option D: Using uv with pipx-like isolation**
+```bash
+# Create a new project directory for isolated installation
+mkdir stackhawk-mcp-isolated
+cd stackhawk-mcp-isolated
+
+# Initialize a new uv project
+uv init
+
+# Install stackhawk-mcp
+uv add stackhawk-mcp
+
+# Run the server
+uv run python -m stackhawk_mcp.server
+```
+
+### Set your StackHawk API key
+```bash
+export STACKHAWK_API_KEY="your-api-key-here"
+```
 
 ---
 
@@ -65,7 +117,11 @@ python -m stackhawk_mcp.http_server
 
 ### Running Tests
 ```bash
+# Using pytest directly
 pytest
+
+# Using uv (if you've set up the project with uv)
+uv run pytest
 ```
 
 ### Integrating with LLMs and IDEs
@@ -74,14 +130,24 @@ StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-po
 
 #### Cursor (AI Coding Editor)
 - **Setup:**
-  - You can install `stackhawk-mcp` globally with pip, or use [pipx](https://pipx.pypa.io/) for isolated environments (recommended for CLI tools):
+  - Install `stackhawk-mcp` using your preferred method:
     ```bash
+    # Using pipx (recommended for CLI tools)
     pipx install stackhawk-mcp
+    
+    # Using uv (recommended for development)
+    uv pip install stackhawk-mcp
+    
+    # Using pip
+    pip install stackhawk-mcp
     ```
   - Run the MCP server locally: `python -m stackhawk_mcp.server` or the HTTP server: `python -m stackhawk_mcp.http_server`.
   - In Cursor, add a custom tool provider pointing to your local MCP server endpoint (e.g., `http://localhost:8080/mcp`).
   - Configure your API key as an environment variable: `export STACKHAWK_API_KEY=your-api-key`.
-  - Example `cursor-mcp-config.json` using pipx:
+  
+  **Example `cursor-mcp-config.json` configurations:**
+  
+  - Using pipx:
     ```json
     {
       "mcpServers": {
@@ -95,13 +161,13 @@ StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-po
       }
     }
     ```
-  - Or, if `stackhawk-mcp` provides a CLI entry point:
+  - Using uv (recommended for local/project development):
     ```json
     {
       "mcpServers": {
         "stackhawk": {
-          "command": "pipx",
-          "args": ["run", "stackhawk-mcp"],
+          "command": "uv",
+          "args": ["--directory", "/full/path/to/stackhawk-mcp", "run", "stackhawk-mcp"],
           "env": {
             "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
           }
@@ -109,7 +175,7 @@ StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-po
       }
     }
     ```
-  - Example `cursor-mcp-config.json` using python directly:
+  - Using python directly:
     ```json
     {
       "mcpServers": {
