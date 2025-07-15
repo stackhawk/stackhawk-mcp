@@ -34,19 +34,32 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
 
 ## Installation
 
-1. **Install via pip:**
+1. **Install via pip (make sure you have write permission to your current python environment):**
    ```bash
-   pip install stackhawk-mcp
+   > pip install stackhawk-mcp
    # Requires Python 3.10 or higher
    ```
-2. **Install locally from the repo:**
+**Or Install via pip in a virtual env:**
    ```bash
-   pip install --user .
+   > python3 -m venv ~/.virtualenvs/mcp
+   > source ~/.virtualenvs/mcp/bin/activate
+   > (mcp) pip install stackhawk-mcp
+   # Requires Python 3.10 or higher
+   ```
+**Or Install via pip using pyenv:**
+   ```bash
+   > pyenv shell 3.10.11
+   > pip install stackhawk-mcp
+   # Requires Python 3.10 or higher
+   ```   
+**Or Install locally from this repo:**
+   ```bash
+   > pip install --user .
    # Run this command from the root of the cloned repository
    ```
-3. **Set your StackHawk API key:**
+2. **Set your StackHawk API key:**
    ```bash
-   export STACKHAWK_API_KEY="your-api-key-here"
+   > export STACKHAWK_API_KEY="your-api-key-here"
    ```
 
 ---
@@ -74,55 +87,54 @@ StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-po
 
 #### Cursor (AI Coding Editor)
 - **Setup:**
-  - You can install `stackhawk-mcp` globally with pip, or use [pipx](https://pipx.pypa.io/) for isolated environments (recommended for CLI tools):
-    ```bash
-    pipx install stackhawk-mcp
-    ```
-  - Run the MCP server locally: `python -m stackhawk_mcp.server` or the HTTP server: `python -m stackhawk_mcp.http_server`.
-  - In Cursor, add a custom tool provider pointing to your local MCP server endpoint (e.g., `http://localhost:8080/mcp`).
-  - Configure your API key as an environment variable: `export STACKHAWK_API_KEY=your-api-key`.
-  - Example `cursor-mcp-config.json` using pipx:
-    ```json
-    {
-      "mcpServers": {
-        "stackhawk": {
-          "command": "pipx",
-          "args": ["run", "stackhawk-mcp", "-m", "stackhawk_mcp.server"],
-          "env": {
-            "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+  - Follow the installation instructions above to install `stackhawk-mcp` in your python environment.
+  - In Cursor, go to `Cursor Settings->Tools & Integrations->MCP Tools`
+  - Add a "New MCP Server" with the following json, depending on your setup:
+    - Using a virtual env at `~/.virtualenvs/mcp`:
+      ```json
+      {
+        "mcpServers": {
+          "stackhawk": {
+            "command": "/home/bobby/.virtualenvs/mcp/bin/python",
+            "args": ["-m", "stackhawk_mcp.server"],
+            "env": {
+              "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+            },
+            "disabled": false
           }
         }
       }
-    }
-    ```
-  - Or, if `stackhawk-mcp` provides a CLI entry point:
-    ```json
-    {
-      "mcpServers": {
-        "stackhawk": {
-          "command": "pipx",
-          "args": ["run", "stackhawk-mcp"],
-          "env": {
-            "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+      ```
+    - Using pyenv:
+      ```json
+      {
+        "mcpServers": {
+          "stackhawk": {
+            "command": "/home/bobby/.pyenv/versions/3.10.11/bin/python3",
+            "args": ["-m", "stackhawk_mcp.server"],
+            "env": {
+              "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+            },
+            "disabled": false
           }
         }
       }
-    }
-    ```
-  - Example `cursor-mcp-config.json` using python directly:
-    ```json
-    {
-      "mcpServers": {
-        "stackhawk": {
-          "command": "python3",
-          "args": ["-m", "stackhawk_mcp.server"],
-          "env": {
-            "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+      ```
+    - Or use python directly:
+      ```json
+      {
+        "mcpServers": {
+          "stackhawk": {
+            "command": "python3",
+            "args": ["-m", "stackhawk_mcp.server"],
+            "env": {
+              "STACKHAWK_API_KEY": "${env:STACKHAWK_API_KEY}"
+            }
           }
         }
       }
-    }
-    ```
+      ```
+    - Then make sure the "stackhawk" MCP Tool is enabled
 - **Usage:**
   - Use Cursor's tool invocation to call StackHawk MCP tools (e.g., vulnerability search, YAML validation).
   - Example prompt: `Validate this StackHawk YAML config for errors.`
