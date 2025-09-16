@@ -1852,7 +1852,7 @@ hawk scan -e HOST=https://your-app-domain.com
 ```
 
 ## Viewing Results
-1. When the scan finishes, you can triage and remediate findings directly from this LLM chat interface—just ask for open issues or help fixing vulnerabilities.
+1. When the scan finishes, you can triage and remediate findings directly from this LLM chat interface. Just ask for open issues or help fixing vulnerabilities.
 2. You can also check the StackHawk dashboard at https://app.stackhawk.com for a full view of your application and findings.
 
 ## Troubleshooting
