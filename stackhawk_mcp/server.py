@@ -50,7 +50,7 @@ STACKHAWK_MCP_VERSION = __version__
 
 def debug_print(message):
     """Print debug messages to stderr for Claude Desktop"""
-    print(f"[DEBUG] {message}", file=sys.stderr, flush=True)
+    " print(f"[DEBUG] {message}", file=sys.stderr, flush=True)
 
 
 class StackHawkClient:
