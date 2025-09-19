@@ -347,3 +347,5 @@ Workflows are designed to skip jobs if the latest commit is an automated version
 2. Select the "Prepare Release" workflow.
 3. Click "Run workflow" and choose the desired bump type (minor or major).
 4. The workflow will handle the rest!
+
+[//]: # (mcp-name: stackhawk.com/stackhawk-mcp)
