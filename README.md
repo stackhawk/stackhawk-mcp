@@ -348,4 +348,6 @@ Workflows are designed to skip jobs if the latest commit is an automated version
 3. Click "Run workflow" and choose the desired bump type (minor or major).
 4. The workflow will handle the rest!
 
-[//]: # (mcp-name: com.stackhawk/*)
+## MCP Registry name
+
+mcp-name: com.stackhawk/*
