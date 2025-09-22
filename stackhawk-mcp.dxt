@@ -1,7 +1,7 @@
 {
   "name": "stackhawk-mcp",
   "description": "StackHawk MCP Server for security testing, analytics, YAML validation, and vulnerability management.",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "author": "StackHawk",
   "license": "MIT",
   "homepage": "https://github.com/stackhawk/stackhawk-mcp",
