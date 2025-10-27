@@ -47,8 +47,8 @@ async def test_new_tools():
         # Test 1: Check Repository Attack Surface
         print("1. Testing check_repository_attack_surface...")
         try:
-            # Test with the current repository name
-            current_repo = "stackhawk-mcp"  # This repo
+            # Test with the current repository name (auto-detected from directory)
+            current_repo = os.path.basename(os.getcwd())  # Dynamic detection
             result = await server._check_repository_attack_surface(
                 repo_name=current_repo,
                 include_vulnerabilities=True,
@@ -159,7 +159,16 @@ async def test_new_tools():
                 "get_sensitive_data_summary"
             ]
             
-            found_tools = [tool.name for tool in tools if tool.name in new_tool_names]
+            # Handle different possible return types from _list_tools_handler
+            tool_names = []
+            if tools:
+                for tool in tools:
+                    if hasattr(tool, 'name'):
+                        tool_names.append(tool.name)
+                    elif isinstance(tool, dict) and 'name' in tool:
+                        tool_names.append(tool['name'])
+            
+            found_tools = [name for name in tool_names if name in new_tool_names]
             print(f"✅ Found {len(found_tools)}/{len(new_tool_names)} new tools in MCP interface")
             for tool_name in found_tools:
                 print(f"   ✓ {tool_name}")

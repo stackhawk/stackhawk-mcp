@@ -2192,24 +2192,12 @@ hawk scan -e HOST=https://your-app-domain.com
     async def _check_repository_attack_surface(self, repo_name: str = None, org_id: str = None, include_vulnerabilities: bool = True, include_apps: bool = True, **kwargs) -> Dict[str, Any]:
         """Check if a repository name exists in StackHawk attack surface and get security information"""
         try:
-            # Get repo name from current directory if not provided
-            if not repo_name:
-                repo_name = os.path.basename(os.getcwd())
-            
-            # Get org_id if not provided
-            if not org_id:
-                user_info = await self.client.get_user_info()
-                org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
+            # Get repo name and org_id using helper methods
+            repo_name = self._get_current_repository_name(repo_name)
+            org_id = await self._get_organization_id(org_id)
 
-            # List all repositories in the organization
-            repos_response = await self.client.list_repositories(org_id, pageSize=1000)
-            repositories = repos_response.get("repositories", [])
-            
-            # Find matching repositories (case-insensitive)
-            matching_repos = [
-                repo for repo in repositories
-                if repo.get("name", "").lower() == repo_name.lower()
-            ]
+            # Find matching repositories
+            matching_repos = await self._find_matching_repositories(repo_name, org_id)
             
             result = {
                 "repository_name": repo_name,
@@ -2276,24 +2264,12 @@ hawk scan -e HOST=https://your-app-domain.com
     async def _check_repository_sensitive_data(self, repo_name: str = None, org_id: str = None, data_type_filter: str = "All", include_remediation: bool = True, **kwargs) -> Dict[str, Any]:
         """Check if a repository has sensitive data findings in StackHawk"""
         try:
-            # Get repo name from current directory if not provided
-            if not repo_name:
-                repo_name = os.path.basename(os.getcwd())
-            
-            # Get org_id if not provided
-            if not org_id:
-                user_info = await self.client.get_user_info()
-                org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
+            # Get repo name and org_id using helper methods
+            repo_name = self._get_current_repository_name(repo_name)
+            org_id = await self._get_organization_id(org_id)
 
-            # List all repositories in the organization
-            repos_response = await self.client.list_repositories(org_id, pageSize=1000)
-            repositories = repos_response.get("repositories", [])
-            
-            # Find matching repositories (case-insensitive)
-            matching_repos = [
-                repo for repo in repositories
-                if repo.get("name", "").lower() == repo_name.lower()
-            ]
+            # Find matching repositories
+            matching_repos = await self._find_matching_repositories(repo_name, org_id)
             
             result = {
                 "repository_name": repo_name,
@@ -2354,10 +2330,8 @@ hawk scan -e HOST=https://your-app-domain.com
     async def _list_application_repository_connections(self, org_id: str = None, include_repo_details: bool = True, include_app_details: bool = True, filter_connected_only: bool = False, **kwargs) -> Dict[str, Any]:
         """List connections between StackHawk applications and code repositories"""
         try:
-            # Get org_id if not provided
-            if not org_id:
-                user_info = await self.client.get_user_info()
-                org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
+            # Get org_id using helper method
+            org_id = await self._get_organization_id(org_id)
 
             # Get all applications and repositories
             apps_response = await self.client.list_applications(org_id, pageSize=1000)
@@ -2463,6 +2437,36 @@ hawk scan -e HOST=https://your-app-domain.com
                 "organization_id": org_id
             }
 
+    def _get_current_repository_name(self, repo_name: str = None) -> str:
+        """Get repository name from parameter or auto-detect from current directory"""
+        if repo_name:
+            return repo_name
+        return os.path.basename(os.getcwd())
+    
+    async def _get_organization_id(self, org_id: str = None) -> str:
+        """Get organization ID from parameter or auto-detect from user info"""
+        if org_id:
+            return org_id
+        
+        user_info = await self.client.get_user_info()
+        organizations = user_info.get("user", {}).get("external", {}).get("organizations", [])
+        
+        if not organizations:
+            raise ValueError("No organizations found for user")
+        
+        return organizations[0]["organization"]["id"]
+    
+    async def _find_matching_repositories(self, repo_name: str, org_id: str) -> List[Dict[str, Any]]:
+        """Find repositories matching the given name (case-insensitive)"""
+        repos_response = await self.client.list_repositories(org_id, pageSize=1000)
+        repositories = repos_response.get("repositories", [])
+        
+        # Find matching repositories (case-insensitive)
+        return [
+            repo for repo in repositories
+            if repo.get("name", "").lower() == repo_name.lower()
+        ]
+
     def _calculate_name_similarity(self, name1: str, name2: str) -> float:
         """Calculate similarity between two names using simple string matching"""
         if not name1 or not name2:
@@ -2483,10 +2487,8 @@ hawk scan -e HOST=https://your-app-domain.com
     async def _get_comprehensive_sensitive_data_summary(self, org_id: str = None, time_period: str = "30d", include_trends: bool = True, include_critical_only: bool = False, include_recommendations: bool = True, group_by: str = "data_type", **kwargs) -> Dict[str, Any]:
         """Get a comprehensive sensitive data summary combining multiple analysis approaches"""
         try:
-            # Get org_id if not provided
-            if not org_id:
-                user_info = await self.client.get_user_info()
-                org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
+            # Get org_id using helper method
+            org_id = await self._get_organization_id(org_id)
 
             # Get all sensitive data findings
             if time_period == "all":
