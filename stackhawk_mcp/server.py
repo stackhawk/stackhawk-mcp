@@ -265,24 +265,50 @@ class StackHawkClient:
         return all_findings
 
     async def list_sensitive_data_findings(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
-        """List sensitive data findings for an organization"""
-        endpoint = f"/api/v1/org/{org_id}/sensitive-data"
-        if all_results:
-            findings = await self._fetch_all_pages(endpoint, params)
-            return {"sensitiveDataFindings": findings}
-        else:
-            return await self._make_request("GET", endpoint, params=params)
+        """List sensitive data findings for an organization (aggregated from repositories)"""
+        # This endpoint is not available in the official StackHawk API
+        # Aggregate sensitive data from all repositories in the organization
+        try:
+            # Get all repositories
+            repos_response = await self.list_repositories(org_id, pageSize=1000)
+            repositories = repos_response.get("repositories", [])
+            
+            all_findings = []
+            for repo in repositories:
+                try:
+                    repo_sensitive_data = await self.get_repository_sensitive_data(
+                        org_id, repo["id"], all_results=all_results, **params
+                    )
+                    repo_findings = repo_sensitive_data.get("sensitiveDataFindings", [])
+                    
+                    # Add repository context to each finding
+                    for finding in repo_findings:
+                        finding["repositoryId"] = repo["id"]
+                        finding["repositoryName"] = repo.get("name", "")
+                    
+                    all_findings.extend(repo_findings)
+                except Exception as e:
+                    debug_print(f"Could not get sensitive data for repository {repo.get('id', 'unknown')}: {e}")
+                    continue
+            
+            return {
+                "sensitiveDataFindings": all_findings,
+                "note": "Aggregated from repository-level sensitive data - org-level endpoint not available in official API",
+                "totalRepositoriesChecked": len(repositories)
+            }
+            
+        except Exception as e:
+            debug_print(f"Error aggregating sensitive data findings: {e}")
+            return {
+                "sensitiveDataFindings": [],
+                "error": str(e),
+                "note": "Could not aggregate sensitive data - org-level endpoint not available in official API"
+            }
 
     async def get_sensitive_data_findings_detailed(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
         """Get detailed sensitive data findings with comprehensive filtering options and optional pagination."""
-        endpoint = f"/api/v1/org/{org_id}/sensitive-data"
-        if all_results:
-            findings = await self._fetch_all_pages(endpoint, params)
-            return {"sensitiveDataFindings": findings}
-        else:
-            default_params = {"pageSize": 100}
-            default_params.update(params)
-            return await self._make_request("GET", endpoint, params=default_params)
+        # This method now delegates to the aggregated implementation
+        return await self.list_sensitive_data_findings(org_id, all_results=all_results, **params)
 
     async def get_application_sensitive_data(self, app_id: str, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
         """Get sensitive data findings for a specific application"""
@@ -299,8 +325,9 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=default_params)
 
     async def get_repository_sensitive_data(self, org_id: str, repo_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
-        """Get sensitive data findings for a specific repository"""
-        endpoint = f"/api/v1/org/{org_id}/repos/{repo_id}/sensitive-data"
+        """Get sensitive data findings for a specific repository (using official OAS endpoint)"""
+        # Official endpoint per StackHawk OpenAPI specification
+        endpoint = f"/api/v1/org/{org_id}/repo/{repo_id}/sensitive/list"
         if all_results:
             findings = await self._fetch_all_pages(endpoint, params)
             return {"sensitiveDataFindings": findings}
@@ -308,12 +335,46 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=params)
 
     async def get_sensitive_data_types(self, org_id: str, **params) -> Dict[str, Any]:
-        """Get available sensitive data types and categories"""
-        return await self._make_request("GET", f"/api/v1/org/{org_id}/sensitive-data/types", params=params)
+        """Get available sensitive data types and categories (fallback implementation)"""
+        # This endpoint is not available in the official StackHawk API
+        # Return standard sensitive data types as fallback
+        return {
+            "sensitiveDataTypes": [
+                {"type": "PII", "description": "Personally Identifiable Information"},
+                {"type": "PCI", "description": "Payment Card Industry data"},
+                {"type": "PHI", "description": "Protected Health Information"},
+                {"type": "SSN", "description": "Social Security Numbers"},
+                {"type": "Email", "description": "Email addresses"},
+                {"type": "Phone", "description": "Phone numbers"},
+                {"type": "Address", "description": "Physical addresses"},
+                {"type": "API_Key", "description": "API keys and tokens"}
+            ],
+            "note": "Standard sensitive data types - endpoint not available in official API"
+        }
 
     async def get_sensitive_data_summary(self, org_id: str, **params) -> Dict[str, Any]:
-        """Get summary of sensitive data findings across the organization"""
-        return await self._make_request("GET", f"/api/v1/org/{org_id}/sensitive-data/summary", params=params)
+        """Get summary of sensitive data findings across the organization (fallback implementation)"""
+        # This endpoint is not available in the official StackHawk API
+        # Calculate summary from organization-level sensitive data findings
+        try:
+            findings_response = await self.list_sensitive_data_findings(org_id, pageSize=1000)
+            findings = findings_response.get("sensitiveDataFindings", [])
+            
+            # Calculate summary statistics
+            summary = {
+                "totalFindings": len(findings),
+                "dataTypeBreakdown": self._calculate_data_type_breakdown(findings),
+                "riskScore": self._calculate_sensitive_data_risk_score(findings),
+                "note": "Calculated summary - endpoint not available in official API"
+            }
+            
+            return summary
+        except Exception as e:
+            debug_print(f"Error calculating sensitive data summary: {e}")
+            return {
+                "error": str(e),
+                "note": "Could not calculate summary - endpoint not available in official API"
+            }
 
     async def _get_project_open_stackhawk_issues(self, config_path: str = None) -> dict:
         """Discover StackHawk config, extract applicationId, and summarize open issues for the app."""
