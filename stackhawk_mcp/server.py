@@ -2102,68 +2102,7 @@ hawk scan -e HOST=https://your-app-domain.com
             "frameworks": frameworks
         }
 
-    async def _get_sensitive_data_report(self, org_id: str, data_type_filter: str = "All", time_range: str = "30d", include_details: bool = True, group_by: str = "data_type", **kwargs) -> Dict[str, Any]:
-        """
-        Generate a grouped and summarized sensitive data report for an entire organization.
-        Use this for org-wide analytics, compliance, and reporting.
-        """
-        try:
-            # For all-time reports, fetch all results to get complete picture
-            if time_range == "all":
-                findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
-                findings = findings_response.get("sensitiveDataFindings", [])
-            else:
-                # For time-limited reports, use pagination to get a reasonable sample
-                findings_params = {"pageSize": 1000}
-                findings_response = await self.client.list_sensitive_data_findings(org_id, **findings_params)
-                findings = findings_response.get("sensitiveDataFindings", [])
 
-            # Apply client-side filters
-            filtered_findings = findings
-
-            if data_type_filter != "All":
-                filtered_findings = [
-                    f for f in filtered_findings
-                    if f.get("dataType") == data_type_filter
-                ]
-
-            if time_range != "all":
-                time_filter = {
-                    "startDate": (datetime.now() - timedelta(days=int(time_range[:-1]))).isoformat(),
-                    "endDate": datetime.now().isoformat()
-                }
-                filtered_findings = [
-                    f for f in filtered_findings
-                    if f.get("findingDate") >= time_filter["startDate"] and f.get("findingDate") <= time_filter["endDate"]
-                ]
-
-            # Group findings
-            grouped_findings = {}
-            for finding in filtered_findings:
-                group_key = finding.get(group_by)
-                if group_key not in grouped_findings:
-                    grouped_findings[group_key] = []
-                grouped_findings[group_key].append(finding)
-
-            # Format findings
-            formatted_findings = []
-            for group, findings in grouped_findings.items():
-                formatted_findings.append({
-                    "group": group,
-                    "findings": findings
-                })
-
-            return {
-                "organizationId": org_id,
-                "dataTypeFilter": data_type_filter,
-                "timeRange": time_range,
-                "report": formatted_findings,
-                "totalFindings": len(filtered_findings),
-                "timestamp": datetime.now().isoformat()
-            }
-        except Exception as e:
-            debug_print(f"Error in _get_sensitive_data_report: {e}")
-            raise
 
     async def _analyze_sensitive_data_trends(self, org_id: str, analysis_period: str = "90d", include_applications: bool = True, include_repositories: bool = True, **kwargs) -> Dict[str, Any]:
         """
@@ -2248,90 +2187,7 @@ hawk scan -e HOST=https://your-app-domain.com
             debug_print(f"Error in _analyze_sensitive_data_trends: {e}")
             raise
 
-    async def _get_critical_sensitive_data(self, org_id: str, data_types: List[str] = None, include_remediation: bool = True, max_results: int = 50, **kwargs) -> Dict[str, Any]:
-        """Get critical sensitive data findings requiring immediate attention"""
-        try:
-            if data_types is None:
-                data_types = ["PII", "PCI", "PHI"]
 
-            # For critical findings, we want to see ALL critical findings, not just the first page
-            findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
-            findings = findings_response.get("sensitiveDataFindings", [])
-
-            # Filter findings based on data types
-            filtered_findings = [
-                f for f in findings
-                if f.get("dataType") in data_types
-            ]
-
-            # Include remediation details
-            if include_remediation:
-                for finding in filtered_findings:
-                    finding["remediation"] = finding.get("remediationDetails", "No remediation details available")
-
-            return {
-                "organizationId": org_id,
-                "dataTypes": data_types,
-                "findings": filtered_findings,
-                "totalFindings": len(filtered_findings),
-                "timestamp": datetime.now().isoformat()
-            }
-        except Exception as e:
-            debug_print(f"Error in _get_critical_sensitive_data: {e}")
-            raise
-
-    async def _generate_sensitive_data_summary(self, org_id: str, time_period: str = "30d", include_recommendations: bool = True, include_risk_assessment: bool = True, **kwargs) -> Dict[str, Any]:
-        """Generate executive-level sensitive data summary and recommendations"""
-        try:
-            # For all-time reports, fetch all results to get complete picture
-            if time_period == "all":
-                findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
-                findings = findings_response.get("sensitiveDataFindings", [])
-            else:
-                # For time-limited reports, use pagination to get a reasonable sample
-                findings_params = {"pageSize": 1000}
-                findings_response = await self.client.list_sensitive_data_findings(org_id, **findings_params)
-                findings = findings_response.get("sensitiveDataFindings", [])
-
-            # Group findings by data type
-            data_type_findings = {"PII": [], "PCI": [], "PHI": [], "Other": []}
-            for finding in findings:
-                data_type = finding.get("dataType", "Other")
-                if data_type in data_type_findings:
-                    data_type_findings[data_type].append(finding)
-                else:
-                    data_type_findings["Other"].append(finding)
-
-            # Generate summary
-            summary = {
-                "totalFindings": len(findings),
-                "dataTypeBreakdown": data_type_findings
-            }
-
-            # Include recommendations
-            if include_recommendations:
-                summary["recommendations"] = [
-                    {
-                        "dataType": data_type,
-                        "recommendation": f"Review and secure {data_type} data exposure"
-                    }
-                    for data_type, findings in data_type_findings.items()
-                    if findings
-                ]
-
-            # Include risk assessment
-            if include_risk_assessment:
-                summary["riskAssessment"] = self._calculate_sensitive_data_risk_score(findings)
-
-            return {
-                "organizationId": org_id,
-                "timePeriod": time_period,
-                "summary": summary,
-                "timestamp": datetime.now().isoformat()
-            }
-        except Exception as e:
-            debug_print(f"Error in _generate_sensitive_data_summary: {e}")
-            raise
 
     async def _check_repository_attack_surface(self, repo_name: str = None, org_id: str = None, include_vulnerabilities: bool = True, include_apps: bool = True, **kwargs) -> Dict[str, Any]:
         """Check if a repository name exists in StackHawk attack surface and get security information"""
