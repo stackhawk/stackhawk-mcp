@@ -2211,21 +2211,30 @@ hawk scan -e HOST=https://your-app-domain.com
                 repo = matching_repos[0]  # Take the first match
                 repo_id = repo["id"]
                 
-                # Get repository details
+                # Get repository details with fallback
                 try:
                     repo_details = await self.client.get_repository_details(org_id, repo_id)
                     result["repository_details"] = repo_details
                 except Exception as e:
-                    debug_print(f"Could not get repository details: {e}")
+                    debug_print(f"Repository details endpoint not available: {e}")
+                    result["repository_details"] = {
+                        "note": "Repository details endpoint not available in API",
+                        "basic_info": repo
+                    }
                 
-                # Get security scan results if requested
+                # Get security scan results if requested with fallback
                 if include_vulnerabilities:
                     try:
                         scan_results = await self.client.get_repository_security_scan(org_id, repo_id)
                         result["security_scan"] = scan_results
                     except Exception as e:
-                        debug_print(f"Could not get security scan: {e}")
-                        result["security_scan"] = {"error": str(e)}
+                        debug_print(f"Repository security scan endpoint not available: {e}")
+                        # Fallback: Try to get scan results from applications connected to this repo
+                        result["security_scan"] = {
+                            "note": "Repository-level security scanning not available",
+                            "fallback_recommendation": "Check connected applications for security scan results",
+                            "error": str(e)
+                        }
                 
                 # Get connected applications if requested
                 if include_apps:
@@ -2285,7 +2294,7 @@ hawk scan -e HOST=https://your-app-domain.com
                 repo_id = repo["id"]
                 result["repository_id"] = repo_id
                 
-                # Get sensitive data findings for this repository
+                # Get sensitive data findings for this repository with fallback
                 try:
                     sensitive_data = await self.client.get_repository_sensitive_data(org_id, repo_id, pageSize=100)
                     findings = sensitive_data.get("sensitiveDataFindings", [])
@@ -2311,9 +2320,46 @@ hawk scan -e HOST=https://your-app-domain.com
                         result["recommendation"] = f"Repository '{repo_name}' is monitored by StackHawk but has no sensitive data findings detected."
                         
                 except Exception as e:
-                    debug_print(f"Could not get sensitive data for repository: {e}")
-                    result["sensitive_data_error"] = str(e)
-                    result["recommendation"] = f"Repository '{repo_name}' is in StackHawk but sensitive data analysis failed. Check repository configuration."
+                    debug_print(f"Repository-level sensitive data endpoint not available: {e}")
+                    # Fallback: Get org-wide sensitive data and filter by repository
+                    try:
+                        org_sensitive_data = await self.client.list_sensitive_data_findings(org_id, pageSize=1000)
+                        org_findings = org_sensitive_data.get("sensitiveDataFindings", [])
+                        
+                        # Filter findings for this repository (by name matching)
+                        repo_findings = [
+                            f for f in org_findings 
+                            if (f.get("repositoryId") == repo_id or 
+                                f.get("repositoryName", "").lower() == repo_name.lower())
+                        ]
+                        
+                        # Apply data type filter
+                        if data_type_filter != "All":
+                            repo_findings = [f for f in repo_findings if f.get("dataType") == data_type_filter]
+                        
+                        result["has_sensitive_data"] = len(repo_findings) > 0
+                        result["sensitive_data_findings"] = repo_findings
+                        result["total_findings"] = len(repo_findings)
+                        result["data_type_breakdown"] = self._calculate_data_type_breakdown(repo_findings)
+                        result["fallback_used"] = True
+                        result["fallback_note"] = "Used organization-level sensitive data filtering as repository endpoint not available"
+                        
+                        if include_remediation and repo_findings:
+                            result["remediation_recommendations"] = [
+                                f"Review and secure {finding.get('dataType', 'Unknown')} data found at {finding.get('location', 'Unknown location')}"
+                                for finding in repo_findings[:5]
+                            ]
+                        
+                        if repo_findings:
+                            result["recommendation"] = f"Repository '{repo_name}' contains {len(repo_findings)} sensitive data findings (via fallback analysis). Immediate review and remediation recommended."
+                        else:
+                            result["recommendation"] = f"Repository '{repo_name}' has no sensitive data findings detected (via fallback analysis)."
+                            
+                    except Exception as fallback_error:
+                        debug_print(f"Fallback sensitive data analysis also failed: {fallback_error}")
+                        result["sensitive_data_error"] = str(e)
+                        result["fallback_error"] = str(fallback_error)
+                        result["recommendation"] = f"Repository '{repo_name}' is in StackHawk but sensitive data analysis failed. Repository-level endpoints may not be available in API."
             else:
                 result["recommendation"] = f"Repository '{repo_name}' is not found in StackHawk. Consider adding it for sensitive data monitoring."
             
@@ -2442,6 +2488,19 @@ hawk scan -e HOST=https://your-app-domain.com
         if repo_name:
             return repo_name
         return os.path.basename(os.getcwd())
+    
+    async def _check_endpoint_availability(self, endpoint: str, method: str = "GET") -> bool:
+        """Check if an API endpoint is available by making a test request"""
+        try:
+            # Make a test request to see if the endpoint exists
+            await self.client._make_request(method, endpoint)
+            return True
+        except Exception as e:
+            # Check if it's a 404 (endpoint doesn't exist) vs other errors
+            if "404" in str(e) or "Not Found" in str(e):
+                return False
+            # For other errors (auth, permissions, etc.), assume endpoint exists
+            return True
     
     async def _get_organization_id(self, org_id: str = None) -> str:
         """Get organization ID from parameter or auto-detect from user info"""
