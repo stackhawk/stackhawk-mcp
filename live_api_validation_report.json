@@ -1,0 +1,175 @@
+{
+  "repository_endpoints": {
+    "listrepositories": {
+      "endpoint_name": "listrepositories",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "listrepos": {
+      "endpoint_name": "listrepos",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "getrepository": {
+      "endpoint_name": "getrepository",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "getrepo": {
+      "endpoint_name": "getrepo",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "listrepositorydata": {
+      "endpoint_name": "listrepositorydata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "listreposensitivedata": {
+      "endpoint_name": "listreposensitivedata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "repositorysensitivedata": {
+      "endpoint_name": "repositorysensitivedata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    }
+  },
+  "sensitive_data_endpoints": {
+    "listsensitivedata": {
+      "endpoint_name": "listsensitivedata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "getsensitivedata": {
+      "endpoint_name": "getsensitivedata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "sensitivedata": {
+      "endpoint_name": "sensitivedata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "repositorysensitivedata": {
+      "endpoint_name": "repositorysensitivedata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    },
+    "listrepositorydata": {
+      "endpoint_name": "listrepositorydata",
+      "method": "Unknown",
+      "path": "Unknown",
+      "available": false,
+      "description": "",
+      "parameters": [],
+      "notes": [
+        "Documentation page not found"
+      ]
+    }
+  },
+  "implementation_validation": {
+    "/api/v1/org/{orgId}/repos": {
+      "status": "not_documented",
+      "doc_page": null,
+      "info": null
+    },
+    "/api/v1/org/{orgId}/repo/{repoId}/sensitive/list": {
+      "status": "not_documented",
+      "doc_page": null,
+      "info": null
+    },
+    "/api/v1/org/{orgId}/repos/{repoId}/security-scan": {
+      "status": "not_documented",
+      "doc_page": null,
+      "info": null
+    },
+    "/api/v1/org/{orgId}/sensitive-data": {
+      "status": "not_documented",
+      "doc_page": null,
+      "info": null
+    },
+    "/api/v1/org/{orgId}/sensitive-data/types": {
+      "status": "not_documented",
+      "doc_page": null,
+      "info": null
+    },
+    "/api/v1/org/{orgId}/sensitive-data/summary": {
+      "status": "not_documented",
+      "doc_page": null,
+      "info": null
+    }
+  },
+  "summary": {
+    "total_endpoints": 6,
+    "documented_endpoints": 0,
+    "success_rate": 0.0
+  }
+}
