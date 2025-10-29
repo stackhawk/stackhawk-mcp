@@ -1,0 +1,55 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/runner/work/stackhawk-mcp/stackhawk-mcp
+configfile: pytest.ini
+plugins: anyio-4.11.0, asyncio-1.2.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 24 items
+
+tests/quick_test.py::test_pagination PASSED                              [  4%]
+tests/test_all_time_fix.py::test_all_time_reports PASSED                 [  8%]
+tests/test_anti_hallucination.py::test_anti_hallucination PASSED         [ 12%]
+tests/test_api_calls.py::test_api_calls PASSED                           [ 16%]
+tests/test_application_vulnerabilities.py::test_vulnerability_scoping PASSED [ 20%]
+tests/test_connection.py::test_authentication PASSED                     [ 25%]
+tests/test_connection.py::test_basic_functionality PASSED                [ 29%]
+tests/test_connection.py::test_mcp_resources PASSED                      [ 33%]
+tests/test_executive_summary_fix.py::test_executive_summary_fix PASSED   [ 37%]
+tests/test_mcp_imports.py::test_imports PASSED                           [ 41%]
+tests/test_mcp_imports.py::test_environment PASSED                       [ 45%]
+tests/test_mcp_imports.py::test_server_creation PASSED                   [ 50%]
+tests/test_mcp_imports.py::test_mcp_imports PASSED                       [ 54%]
+tests/test_pagination_simple.py::test_pagination PASSED                  [ 58%]
+tests/test_repository_analysis.py::test_repository_analysis PASSED       [ 62%]
+tests/test_repository_analysis.py::test_repository_api_endpoints PASSED  [ 66%]
+tests/test_sensitive_data.py::test_sensitive_data_functionality PASSED   [ 70%]
+tests/test_sensitive_data.py::test_sensitive_data_api_endpoints PASSED   [ 75%]
+tests/test_server_fix.py::test_server_import PASSED                      [ 79%]
+tests/test_server_fix.py::test_server_class PASSED                       [ 83%]
+tests/test_server_fix.py::test_tech_flag_filtering PASSED                [ 87%]
+tests/test_tool_schema.py::test_tool_schema_output_schema_and_annotations PASSED [ 91%]
+tests/test_vulnerability_reporting.py::test_vulnerability_reporting PASSED [ 95%]
+tests/test_yaml_tools.py::test_yaml_tools PASSED                         [100%]
+
+=============================== warnings summary ===============================
+tests/test_mcp_imports.py::test_imports
+  /home/runner/.local/lib/python3.12/site-packages/_pytest/python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_mcp_imports.py::test_imports returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_mcp_imports.py::test_environment
+  /home/runner/.local/lib/python3.12/site-packages/_pytest/python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_mcp_imports.py::test_environment returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_mcp_imports.py::test_server_creation
+  /home/runner/.local/lib/python3.12/site-packages/_pytest/python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_mcp_imports.py::test_server_creation returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 24 passed, 3 warnings in 4.84s ========================

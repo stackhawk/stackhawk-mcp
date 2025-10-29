@@ -107,39 +107,23 @@ async def test_all_time_reports():
         print(f"   Applications analyzed: {total_trends}")
         print(f"   Processing time: {(end_time - start_time).total_seconds():.2f} seconds")
         
-        # Test 5: Sensitive Data Report - All Time
-        print("\n5. Testing all-time sensitive data report...")
+        # Test 5: Comprehensive Sensitive Data Summary - All Time
+        print("\n5. Testing all-time comprehensive sensitive data summary...")
         start_time = datetime.now()
-        sensitive_report = await server._get_sensitive_data_report(
+        sensitive_summary = await server._get_comprehensive_sensitive_data_summary(
             org_id=org_id,
-            data_type_filter="All",
-            time_range="all",
-            include_details=True,
+            time_period="all",
+            include_trends=True,
+            include_critical_only=False,
+            include_recommendations=True,
             group_by="data_type"
         )
         end_time = datetime.now()
         
-        total_sensitive = sensitive_report.get("totalFindings", 0)
+        total_sensitive = sensitive_summary.get("total_findings", 0)
         
-        print(f"✅ All-time sensitive data report generated!")
+        print(f"✅ All-time comprehensive sensitive data summary generated!")
         print(f"   Total sensitive data findings: {total_sensitive}")
-        print(f"   Processing time: {(end_time - start_time).total_seconds():.2f} seconds")
-        
-        # Test 6: Sensitive Data Summary - All Time
-        print("\n6. Testing all-time sensitive data summary...")
-        start_time = datetime.now()
-        sensitive_summary = await server._generate_sensitive_data_summary(
-            org_id=org_id,
-            time_period="all",
-            include_recommendations=True,
-            include_risk_assessment=True
-        )
-        end_time = datetime.now()
-        
-        total_sensitive_summary = sensitive_summary["summary"]["totalFindings"]
-        
-        print(f"✅ All-time sensitive data summary generated!")
-        print(f"   Total sensitive data findings: {total_sensitive_summary}")
         print(f"   Processing time: {(end_time - start_time).total_seconds():.2f} seconds")
         
         # Summary
@@ -147,8 +131,7 @@ async def test_all_time_reports():
         print(f"   Executive Summary Findings: {total_findings}")
         print(f"   Vulnerability Report Findings: {total_findings_vuln}")
         print(f"   Critical Findings: {total_critical}")
-        print(f"   Sensitive Data Findings: {total_sensitive}")
-        print(f"   Sensitive Data Summary: {total_sensitive_summary}")
+        print(f"   Sensitive Data Summary: {total_sensitive}")
         
         # Verify consistency
         if total_findings == total_findings_vuln:
