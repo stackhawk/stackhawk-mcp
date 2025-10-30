@@ -59,3 +59,15 @@ Thumbs.db
 
 # Output
 output/
+
+# Temporary validation and test files
+test_new_tools.py
+test_output.txt
+*validation*.py
+*validation*.json
+*validation*.md
+stackhawk-openapi*.json
+API_VALIDATION_REPORT.md
+LIVE_API_VALIDATION_SUMMARY.md
+OFFICIAL_API_VALIDATION.md
+final_endpoint_validation.py
