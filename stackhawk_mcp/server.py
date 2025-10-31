@@ -265,24 +265,50 @@ class StackHawkClient:
         return all_findings
 
     async def list_sensitive_data_findings(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
-        """List sensitive data findings for an organization"""
-        endpoint = f"/api/v1/org/{org_id}/sensitive-data"
-        if all_results:
-            findings = await self._fetch_all_pages(endpoint, params)
-            return {"sensitiveDataFindings": findings}
-        else:
-            return await self._make_request("GET", endpoint, params=params)
+        """List sensitive data findings for an organization (aggregated from repositories)"""
+        # This endpoint is not available in the official StackHawk API
+        # Aggregate sensitive data from all repositories in the organization
+        try:
+            # Get all repositories
+            repos_response = await self.list_repositories(org_id, pageSize=1000)
+            repositories = repos_response.get("repositories", [])
+            
+            all_findings = []
+            for repo in repositories:
+                try:
+                    repo_sensitive_data = await self.get_repository_sensitive_data(
+                        org_id, repo["id"], all_results=all_results, **params
+                    )
+                    repo_findings = repo_sensitive_data.get("sensitiveDataFindings", [])
+                    
+                    # Add repository context to each finding
+                    for finding in repo_findings:
+                        finding["repositoryId"] = repo["id"]
+                        finding["repositoryName"] = repo.get("name", "")
+                    
+                    all_findings.extend(repo_findings)
+                except Exception as e:
+                    debug_print(f"Could not get sensitive data for repository {repo.get('id', 'unknown')}: {e}")
+                    continue
+            
+            return {
+                "sensitiveDataFindings": all_findings,
+                "note": "Aggregated from repository-level sensitive data - org-level endpoint not available in official API",
+                "totalRepositoriesChecked": len(repositories)
+            }
+            
+        except Exception as e:
+            debug_print(f"Error aggregating sensitive data findings: {e}")
+            return {
+                "sensitiveDataFindings": [],
+                "error": str(e),
+                "note": "Could not aggregate sensitive data - org-level endpoint not available in official API"
+            }
 
     async def get_sensitive_data_findings_detailed(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
         """Get detailed sensitive data findings with comprehensive filtering options and optional pagination."""
-        endpoint = f"/api/v1/org/{org_id}/sensitive-data"
-        if all_results:
-            findings = await self._fetch_all_pages(endpoint, params)
-            return {"sensitiveDataFindings": findings}
-        else:
-            default_params = {"pageSize": 100}
-            default_params.update(params)
-            return await self._make_request("GET", endpoint, params=default_params)
+        # This method now delegates to the aggregated implementation
+        return await self.list_sensitive_data_findings(org_id, all_results=all_results, **params)
 
     async def get_application_sensitive_data(self, app_id: str, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
         """Get sensitive data findings for a specific application"""
@@ -299,8 +325,9 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=default_params)
 
     async def get_repository_sensitive_data(self, org_id: str, repo_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
-        """Get sensitive data findings for a specific repository"""
-        endpoint = f"/api/v1/org/{org_id}/repos/{repo_id}/sensitive-data"
+        """Get sensitive data findings for a specific repository (using official OAS endpoint)"""
+        # Official endpoint per StackHawk OpenAPI specification
+        endpoint = f"/api/v1/org/{org_id}/repo/{repo_id}/sensitive/list"
         if all_results:
             findings = await self._fetch_all_pages(endpoint, params)
             return {"sensitiveDataFindings": findings}
@@ -308,12 +335,46 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=params)
 
     async def get_sensitive_data_types(self, org_id: str, **params) -> Dict[str, Any]:
-        """Get available sensitive data types and categories"""
-        return await self._make_request("GET", f"/api/v1/org/{org_id}/sensitive-data/types", params=params)
+        """Get available sensitive data types and categories (fallback implementation)"""
+        # This endpoint is not available in the official StackHawk API
+        # Return standard sensitive data types as fallback
+        return {
+            "sensitiveDataTypes": [
+                {"type": "PII", "description": "Personally Identifiable Information"},
+                {"type": "PCI", "description": "Payment Card Industry data"},
+                {"type": "PHI", "description": "Protected Health Information"},
+                {"type": "SSN", "description": "Social Security Numbers"},
+                {"type": "Email", "description": "Email addresses"},
+                {"type": "Phone", "description": "Phone numbers"},
+                {"type": "Address", "description": "Physical addresses"},
+                {"type": "API_Key", "description": "API keys and tokens"}
+            ],
+            "note": "Standard sensitive data types - endpoint not available in official API"
+        }
 
     async def get_sensitive_data_summary(self, org_id: str, **params) -> Dict[str, Any]:
-        """Get summary of sensitive data findings across the organization"""
-        return await self._make_request("GET", f"/api/v1/org/{org_id}/sensitive-data/summary", params=params)
+        """Get summary of sensitive data findings across the organization (fallback implementation)"""
+        # This endpoint is not available in the official StackHawk API
+        # Calculate summary from organization-level sensitive data findings
+        try:
+            findings_response = await self.list_sensitive_data_findings(org_id, pageSize=1000)
+            findings = findings_response.get("sensitiveDataFindings", [])
+            
+            # Calculate summary statistics
+            summary = {
+                "totalFindings": len(findings),
+                "dataTypeBreakdown": self._calculate_data_type_breakdown(findings),
+                "riskScore": self._calculate_sensitive_data_risk_score(findings),
+                "note": "Calculated summary - endpoint not available in official API"
+            }
+            
+            return summary
+        except Exception as e:
+            debug_print(f"Error calculating sensitive data summary: {e}")
+            return {
+                "error": str(e),
+                "note": "Could not calculate summary - endpoint not available in official API"
+            }
 
     async def _get_project_open_stackhawk_issues(self, config_path: str = None) -> dict:
         """Discover StackHawk config, extract applicationId, and summarize open issues for the app."""
@@ -775,33 +836,42 @@ class StackHawkMCPServer:
                         }
                     ),
                     Tool(
-                        name="get_sensitive_data",
-                        description="Get sensitive data findings for a specific application or repository. Use this for asset-level triage and remediation.",
+                        name="check_repository_attack_surface",
+                        description="Check if the current repository name exists in the StackHawk attack surface and get related security info.",
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "target_type": {"type": "string", "description": "Target type: 'application' or 'repository'. Use 'application' for app-level findings, 'repository' for repo-level findings."},
-                                "target_id": {"type": "string", "description": "The ID of the application or repository to query."},
+                                "repo_name": {"type": "string", "description": "Repository name to check (optional, defaults to current directory name)"},
                                 "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
-                                "data_type_filter": {"type": "string", "description": "Filter by sensitive data type (e.g., PII, PCI, PHI, or All for no filter)."},
-                                "include_details": {"type": "boolean", "description": "Whether to include detailed finding information (default: true)"},
-                                "max_results": {"type": "integer", "description": "Maximum number of findings to return (default: 100)"}
-                            },
-                            "required": ["target_type", "target_id"]
+                                "include_vulnerabilities": {"type": "boolean", "description": "Include vulnerability information (default: true)"},
+                                "include_apps": {"type": "boolean", "description": "Include connected applications (default: true)"}
+                            }
                         }
                     ),
                     Tool(
-                        name="map_sensitive_data_surface",
-                        description="Map sensitive data exposure for an organization",
+                        name="check_repository_sensitive_data",
+                        description="Check if the current repository name has sensitive data findings in StackHawk and get exposure details.",
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID"},
-                                "include_applications": {"type": "boolean", "description": "Include applications (default: true)"},
-                                "include_repositories": {"type": "boolean", "description": "Include repositories (default: true)"},
-                                "risk_visualization": {"type": "boolean", "description": "Include risk visualization (default: true)"}
-                            },
-                            "required": ["org_id"]
+                                "repo_name": {"type": "string", "description": "Repository name to check (optional, defaults to current directory name)"},
+                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
+                                "data_type_filter": {"type": "string", "description": "Filter by sensitive data type (e.g., PII, PCI, PHI, or All for no filter)."},
+                                "include_remediation": {"type": "boolean", "description": "Include remediation recommendations (default: true)"}
+                            }
+                        }
+                    ),
+                    Tool(
+                        name="list_application_repository_connections",
+                        description="List connections between StackHawk applications and code repositories to understand the attack surface mapping.",
+                        inputSchema={
+                            "type": "object",
+                            "properties": {
+                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
+                                "include_repo_details": {"type": "boolean", "description": "Include repository security details (default: true)"},
+                                "include_app_details": {"type": "boolean", "description": "Include application security details (default: true)"},
+                                "filter_connected_only": {"type": "boolean", "description": "Only show apps/repos that have connections (default: false)"}
+                            }
                         }
                     ),
                     Tool(
@@ -848,60 +918,18 @@ class StackHawkMCPServer:
                         }
                     ),
                     Tool(
-                        name="get_sensitive_data_report",
-                        description="Get a grouped and summarized sensitive data report for an entire organization (current snapshot). Use this for org-wide analytics, compliance, and reporting. For trends or changes over time, use analyze_sensitive_data_trends.",
+                        name="get_sensitive_data_summary",
+                        description="Get a comprehensive sensitive data summary for an organization, including trends, critical findings, and recommendations.",
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID"},
-                                "data_type_filter": {"type": "string", "description": "Filter by sensitive data type (e.g., PII, PCI, PHI, or All for no filter)."},
-                                "time_range": {"type": "string", "description": "Time range for findings (e.g., '30d', 'all'). Default is 30d."},
-                                "include_details": {"type": "boolean", "description": "Whether to include detailed finding information (default: true)"},
-                                "group_by": {"type": "string", "description": "Field to group findings by (e.g., 'data_type', 'applicationId', 'repositoryId'). Default is 'data_type'."}
-                            },
-                            "required": ["org_id"]
-                        }
-                    ),
-                    Tool(
-                        name="analyze_sensitive_data_trends",
-                        description="Analyze sensitive data trends and changes over time for an organization. Provides time-based, asset-level trend analysis by application and repository. Use this to answer questions like 'How is sensitive data risk changing over time?' or 'Which apps are trending up or down in exposure?'. For a current grouped snapshot, use get_sensitive_data_report instead.",
-                        inputSchema={
-                            "type": "object",
-                            "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID"},
-                                "analysis_period": {"type": "string", "description": "Analysis period (default: 90d)"},
-                                "include_applications": {"type": "boolean", "description": "Include applications (default: true)"},
-                                "include_repositories": {"type": "boolean", "description": "Include repositories (default: true)"}
-                            },
-                            "required": ["org_id"]
-                        }
-                    ),
-                    Tool(
-                        name="get_critical_sensitive_data",
-                        description="Get critical sensitive data findings for an organization",
-                        inputSchema={
-                            "type": "object",
-                            "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID"},
-                                "data_types": {"type": "array", "items": {"type": "string"}, "description": "Data types (optional)"},
-                                "include_remediation": {"type": "boolean", "description": "Include remediation info (default: true)"},
-                                "max_results": {"type": "integer", "description": "Max results (default: 50)"}
-                            },
-                            "required": ["org_id"]
-                        }
-                    ),
-                    Tool(
-                        name="generate_sensitive_data_summary",
-                        description="Generate a sensitive data summary for an organization",
-                        inputSchema={
-                            "type": "object",
-                            "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID"},
-                                "time_period": {"type": "string", "description": "Time period (default: 30d)"},
-                                "include_recommendations": {"type": "boolean", "description": "Include recommendations (default: true)"},
-                                "include_risk_assessment": {"type": "boolean", "description": "Include risk assessment (default: true)"}
-                            },
-                            "required": ["org_id"]
+                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
+                                "time_period": {"type": "string", "description": "Time period for analysis (default: 30d)"},
+                                "include_trends": {"type": "boolean", "description": "Include trend analysis (default: true)"},
+                                "include_critical_only": {"type": "boolean", "description": "Focus only on critical findings (default: false)"},
+                                "include_recommendations": {"type": "boolean", "description": "Include remediation recommendations (default: true)"},
+                                "group_by": {"type": "string", "description": "Group findings by 'data_type', 'application', or 'repository' (default: data_type)"}
+                            }
                         }
                     ),
                 ]
@@ -934,10 +962,12 @@ class StackHawkMCPServer:
                     result = await self._get_stackhawk_schema(**arguments)
                 elif name == "validate_field_exists":
                     result = await self._validate_field_exists(**arguments)
-                elif name == "get_sensitive_data":
-                    result = await self._get_sensitive_data(**arguments)
-                elif name == "map_sensitive_data_surface":
-                    result = await self._map_sensitive_data_surface(**arguments)
+                elif name == "check_repository_attack_surface":
+                    result = await self._check_repository_attack_surface(**arguments)
+                elif name == "check_repository_sensitive_data":
+                    result = await self._check_repository_sensitive_data(**arguments)
+                elif name == "list_application_repository_connections":
+                    result = await self._list_application_repository_connections(**arguments)
                 elif name == "setup_stackhawk_for_project":
                     result = await self._setup_stackhawk_for_project(**arguments)
                 elif name == "get_stackhawk_scan_instructions":
@@ -957,17 +987,8 @@ class StackHawkMCPServer:
                         failure_threshold=None
                     )
                     return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-                elif name == "get_sensitive_data_report":
-                    result = await self._get_sensitive_data_report(**arguments)
-                    return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-                elif name == "analyze_sensitive_data_trends":
-                    result = await self._analyze_sensitive_data_trends(**arguments)
-                    return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-                elif name == "get_critical_sensitive_data":
-                    result = await self._get_critical_sensitive_data(**arguments)
-                    return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-                elif name == "generate_sensitive_data_summary":
-                    result = await self._generate_sensitive_data_summary(**arguments)
+                elif name == "get_sensitive_data_summary":
+                    result = await self._get_comprehensive_sensitive_data_summary(**arguments)
                     return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
                 else:
                     raise ValueError(f"Unknown tool: {name}")
@@ -2142,68 +2163,7 @@ hawk scan -e HOST=https://your-app-domain.com
             "frameworks": frameworks
         }
 
-    async def _get_sensitive_data_report(self, org_id: str, data_type_filter: str = "All", time_range: str = "30d", include_details: bool = True, group_by: str = "data_type", **kwargs) -> Dict[str, Any]:
-        """
-        Generate a grouped and summarized sensitive data report for an entire organization.
-        Use this for org-wide analytics, compliance, and reporting.
-        """
-        try:
-            # For all-time reports, fetch all results to get complete picture
-            if time_range == "all":
-                findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
-                findings = findings_response.get("sensitiveDataFindings", [])
-            else:
-                # For time-limited reports, use pagination to get a reasonable sample
-                findings_params = {"pageSize": 1000}
-                findings_response = await self.client.list_sensitive_data_findings(org_id, **findings_params)
-                findings = findings_response.get("sensitiveDataFindings", [])
 
-            # Apply client-side filters
-            filtered_findings = findings
-
-            if data_type_filter != "All":
-                filtered_findings = [
-                    f for f in filtered_findings
-                    if f.get("dataType") == data_type_filter
-                ]
-
-            if time_range != "all":
-                time_filter = {
-                    "startDate": (datetime.now() - timedelta(days=int(time_range[:-1]))).isoformat(),
-                    "endDate": datetime.now().isoformat()
-                }
-                filtered_findings = [
-                    f for f in filtered_findings
-                    if f.get("findingDate") >= time_filter["startDate"] and f.get("findingDate") <= time_filter["endDate"]
-                ]
-
-            # Group findings
-            grouped_findings = {}
-            for finding in filtered_findings:
-                group_key = finding.get(group_by)
-                if group_key not in grouped_findings:
-                    grouped_findings[group_key] = []
-                grouped_findings[group_key].append(finding)
-
-            # Format findings
-            formatted_findings = []
-            for group, findings in grouped_findings.items():
-                formatted_findings.append({
-                    "group": group,
-                    "findings": findings
-                })
-
-            return {
-                "organizationId": org_id,
-                "dataTypeFilter": data_type_filter,
-                "timeRange": time_range,
-                "report": formatted_findings,
-                "totalFindings": len(filtered_findings),
-                "timestamp": datetime.now().isoformat()
-            }
-        except Exception as e:
-            debug_print(f"Error in _get_sensitive_data_report: {e}")
-            raise
 
     async def _analyze_sensitive_data_trends(self, org_id: str, analysis_period: str = "90d", include_applications: bool = True, include_repositories: bool = True, **kwargs) -> Dict[str, Any]:
         """
@@ -2288,90 +2248,464 @@ hawk scan -e HOST=https://your-app-domain.com
             debug_print(f"Error in _analyze_sensitive_data_trends: {e}")
             raise
 
-    async def _get_critical_sensitive_data(self, org_id: str, data_types: List[str] = None, include_remediation: bool = True, max_results: int = 50, **kwargs) -> Dict[str, Any]:
-        """Get critical sensitive data findings requiring immediate attention"""
+
+
+    async def _check_repository_attack_surface(self, repo_name: str = None, org_id: str = None, include_vulnerabilities: bool = True, include_apps: bool = True, **kwargs) -> Dict[str, Any]:
+        """Check if a repository name exists in StackHawk attack surface and get security information"""
         try:
-            if data_types is None:
-                data_types = ["PII", "PCI", "PHI"]
+            # Get repo name and org_id using helper methods
+            repo_name = self._get_current_repository_name(repo_name)
+            org_id = await self._get_organization_id(org_id)
 
-            # For critical findings, we want to see ALL critical findings, not just the first page
-            findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
-            findings = findings_response.get("sensitiveDataFindings", [])
-
-            # Filter findings based on data types
-            filtered_findings = [
-                f for f in findings
-                if f.get("dataType") in data_types
-            ]
-
-            # Include remediation details
-            if include_remediation:
-                for finding in filtered_findings:
-                    finding["remediation"] = finding.get("remediationDetails", "No remediation details available")
-
-            return {
-                "organizationId": org_id,
-                "dataTypes": data_types,
-                "findings": filtered_findings,
-                "totalFindings": len(filtered_findings),
+            # Find matching repositories
+            matching_repos = await self._find_matching_repositories(repo_name, org_id)
+            
+            result = {
+                "repository_name": repo_name,
+                "organization_id": org_id,
+                "found_in_attack_surface": len(matching_repos) > 0,
+                "matching_repositories": matching_repos,
                 "timestamp": datetime.now().isoformat()
             }
+            
+            if matching_repos:
+                repo = matching_repos[0]  # Take the first match
+                repo_id = repo["id"]
+                
+                # Get repository details with fallback
+                try:
+                    repo_details = await self.client.get_repository_details(org_id, repo_id)
+                    result["repository_details"] = repo_details
+                except Exception as e:
+                    debug_print(f"Repository details endpoint not available: {e}")
+                    result["repository_details"] = {
+                        "note": "Repository details endpoint not available in API",
+                        "basic_info": repo
+                    }
+                
+                # Get security scan results if requested with fallback
+                if include_vulnerabilities:
+                    try:
+                        scan_results = await self.client.get_repository_security_scan(org_id, repo_id)
+                        result["security_scan"] = scan_results
+                    except Exception as e:
+                        debug_print(f"Repository security scan endpoint not available: {e}")
+                        # Fallback: Try to get scan results from applications connected to this repo
+                        result["security_scan"] = {
+                            "note": "Repository-level security scanning not available",
+                            "fallback_recommendation": "Check connected applications for security scan results",
+                            "error": str(e)
+                        }
+                
+                # Get connected applications if requested
+                if include_apps:
+                    try:
+                        # Get applications and find ones connected to this repository
+                        apps_response = await self.client.list_applications(org_id, pageSize=1000)
+                        applications = apps_response.get("applications", [])
+                        
+                        connected_apps = []
+                        for app in applications:
+                            # Check if app is connected to this repository
+                            # This is a simplified check - in reality you'd check app metadata or configuration
+                            if repo_name.lower() in app.get("name", "").lower():
+                                connected_apps.append(app)
+                        
+                        result["connected_applications"] = connected_apps
+                        result["total_connected_apps"] = len(connected_apps)
+                    except Exception as e:
+                        debug_print(f"Could not get connected applications: {e}")
+                        result["connected_applications"] = []
+                
+                result["recommendation"] = f"Repository '{repo_name}' is found in your StackHawk attack surface. Review the security findings and ensure proper monitoring is in place."
+            else:
+                result["recommendation"] = f"Repository '{repo_name}' is not found in your StackHawk attack surface. Consider adding it for security monitoring if it contains application code."
+            
+            return result
+            
         except Exception as e:
-            debug_print(f"Error in _get_critical_sensitive_data: {e}")
-            raise
+            debug_print(f"Error in _check_repository_attack_surface: {e}")
+            return {
+                "error": str(e),
+                "repository_name": repo_name,
+                "message": "Failed to check repository attack surface"
+            }
 
-    async def _generate_sensitive_data_summary(self, org_id: str, time_period: str = "30d", include_recommendations: bool = True, include_risk_assessment: bool = True, **kwargs) -> Dict[str, Any]:
-        """Generate executive-level sensitive data summary and recommendations"""
+    async def _check_repository_sensitive_data(self, repo_name: str = None, org_id: str = None, data_type_filter: str = "All", include_remediation: bool = True, **kwargs) -> Dict[str, Any]:
+        """Check if a repository has sensitive data findings in StackHawk"""
         try:
-            # For all-time reports, fetch all results to get complete picture
+            # Get repo name and org_id using helper methods
+            repo_name = self._get_current_repository_name(repo_name)
+            org_id = await self._get_organization_id(org_id)
+
+            # Find matching repositories
+            matching_repos = await self._find_matching_repositories(repo_name, org_id)
+            
+            result = {
+                "repository_name": repo_name,
+                "organization_id": org_id,
+                "found_in_stackhawk": len(matching_repos) > 0,
+                "has_sensitive_data": False,
+                "sensitive_data_findings": [],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            if matching_repos:
+                repo = matching_repos[0]  # Take the first match
+                repo_id = repo["id"]
+                result["repository_id"] = repo_id
+                
+                # Get sensitive data findings for this repository with fallback
+                try:
+                    sensitive_data = await self.client.get_repository_sensitive_data(org_id, repo_id, pageSize=100)
+                    findings = sensitive_data.get("sensitiveDataFindings", [])
+                    
+                    # Apply data type filter
+                    if data_type_filter != "All":
+                        findings = [f for f in findings if f.get("dataType") == data_type_filter]
+                    
+                    result["has_sensitive_data"] = len(findings) > 0
+                    result["sensitive_data_findings"] = findings
+                    result["total_findings"] = len(findings)
+                    result["data_type_breakdown"] = self._calculate_data_type_breakdown(findings)
+                    
+                    if include_remediation and findings:
+                        result["remediation_recommendations"] = [
+                            f"Review and secure {finding.get('dataType', 'Unknown')} data found at {finding.get('location', 'Unknown location')}"
+                            for finding in findings[:5]  # Top 5 recommendations
+                        ]
+                    
+                    if findings:
+                        result["recommendation"] = f"Repository '{repo_name}' contains {len(findings)} sensitive data findings. Immediate review and remediation recommended."
+                    else:
+                        result["recommendation"] = f"Repository '{repo_name}' is monitored by StackHawk but has no sensitive data findings detected."
+                        
+                except Exception as e:
+                    debug_print(f"Repository-level sensitive data endpoint not available: {e}")
+                    # Fallback: Get org-wide sensitive data and filter by repository
+                    try:
+                        org_sensitive_data = await self.client.list_sensitive_data_findings(org_id, pageSize=1000)
+                        org_findings = org_sensitive_data.get("sensitiveDataFindings", [])
+                        
+                        # Filter findings for this repository (by name matching)
+                        repo_findings = [
+                            f for f in org_findings 
+                            if (f.get("repositoryId") == repo_id or 
+                                f.get("repositoryName", "").lower() == repo_name.lower())
+                        ]
+                        
+                        # Apply data type filter
+                        if data_type_filter != "All":
+                            repo_findings = [f for f in repo_findings if f.get("dataType") == data_type_filter]
+                        
+                        result["has_sensitive_data"] = len(repo_findings) > 0
+                        result["sensitive_data_findings"] = repo_findings
+                        result["total_findings"] = len(repo_findings)
+                        result["data_type_breakdown"] = self._calculate_data_type_breakdown(repo_findings)
+                        result["fallback_used"] = True
+                        result["fallback_note"] = "Used organization-level sensitive data filtering as repository endpoint not available"
+                        
+                        if include_remediation and repo_findings:
+                            result["remediation_recommendations"] = [
+                                f"Review and secure {finding.get('dataType', 'Unknown')} data found at {finding.get('location', 'Unknown location')}"
+                                for finding in repo_findings[:5]
+                            ]
+                        
+                        if repo_findings:
+                            result["recommendation"] = f"Repository '{repo_name}' contains {len(repo_findings)} sensitive data findings (via fallback analysis). Immediate review and remediation recommended."
+                        else:
+                            result["recommendation"] = f"Repository '{repo_name}' has no sensitive data findings detected (via fallback analysis)."
+                            
+                    except Exception as fallback_error:
+                        debug_print(f"Fallback sensitive data analysis also failed: {fallback_error}")
+                        result["sensitive_data_error"] = str(e)
+                        result["fallback_error"] = str(fallback_error)
+                        result["recommendation"] = f"Repository '{repo_name}' is in StackHawk but sensitive data analysis failed. Repository-level endpoints may not be available in API."
+            else:
+                result["recommendation"] = f"Repository '{repo_name}' is not found in StackHawk. Consider adding it for sensitive data monitoring."
+            
+            return result
+            
+        except Exception as e:
+            debug_print(f"Error in _check_repository_sensitive_data: {e}")
+            return {
+                "error": str(e),
+                "repository_name": repo_name,
+                "message": "Failed to check repository sensitive data"
+            }
+
+    async def _list_application_repository_connections(self, org_id: str = None, include_repo_details: bool = True, include_app_details: bool = True, filter_connected_only: bool = False, **kwargs) -> Dict[str, Any]:
+        """List connections between StackHawk applications and code repositories"""
+        try:
+            # Get org_id using helper method
+            org_id = await self._get_organization_id(org_id)
+
+            # Get all applications and repositories
+            apps_response = await self.client.list_applications(org_id, pageSize=1000)
+            repos_response = await self.client.list_repositories(org_id, pageSize=1000)
+            
+            applications = apps_response.get("applications", [])
+            repositories = repos_response.get("repositories", [])
+            
+            connections = []
+            orphaned_apps = []
+            orphaned_repos = []
+            
+            # Analyze connections between apps and repos
+            for app in applications:
+                app_name = app.get("name", "").lower()
+                connected_repos = []
+                
+                # Find repositories that might be connected to this app
+                for repo in repositories:
+                    repo_name = repo.get("name", "").lower()
+                    
+                    # Simple connection logic - can be enhanced based on actual StackHawk metadata
+                    if (app_name in repo_name or 
+                        repo_name in app_name or 
+                        self._calculate_name_similarity(app_name, repo_name) > 0.7):
+                        connected_repos.append(repo)
+                
+                if connected_repos:
+                    connection = {
+                        "application": app,
+                        "connected_repositories": connected_repos,
+                        "connection_strength": "high" if len(connected_repos) == 1 else "medium"
+                    }
+                    
+                    if include_app_details:
+                        try:
+                            app_details = await self.client.get_application(app["id"])
+                            connection["application_details"] = app_details
+                        except Exception as e:
+                            debug_print(f"Could not get app details for {app['id']}: {e}")
+                    
+                    if include_repo_details:
+                        repo_details = []
+                        for repo in connected_repos:
+                            try:
+                                repo_detail = await self.client.get_repository_details(org_id, repo["id"])
+                                repo_details.append(repo_detail)
+                            except Exception as e:
+                                debug_print(f"Could not get repo details for {repo['id']}: {e}")
+                                repo_details.append(repo)  # Use basic info if detailed fetch fails
+                        connection["repository_details"] = repo_details
+                    
+                    connections.append(connection)
+                elif not filter_connected_only:
+                    orphaned_apps.append(app)
+            
+            # Find repositories without app connections
+            if not filter_connected_only:
+                connected_repo_ids = set()
+                for conn in connections:
+                    for repo in conn["connected_repositories"]:
+                        connected_repo_ids.add(repo["id"])
+                
+                orphaned_repos = [repo for repo in repositories if repo["id"] not in connected_repo_ids]
+            
+            result = {
+                "organization_id": org_id,
+                "total_applications": len(applications),
+                "total_repositories": len(repositories),
+                "total_connections": len(connections),
+                "connections": connections,
+                "coverage_stats": {
+                    "connected_applications": len(connections),
+                    "orphaned_applications": len(orphaned_apps),
+                    "orphaned_repositories": len(orphaned_repos),
+                    "connection_coverage": (len(connections) / max(len(applications), 1)) * 100
+                },
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            if not filter_connected_only:
+                result["orphaned_applications"] = orphaned_apps
+                result["orphaned_repositories"] = orphaned_repos
+            
+            # Add recommendations
+            recommendations = []
+            if orphaned_apps:
+                recommendations.append(f"Consider connecting {len(orphaned_apps)} orphaned applications to their corresponding repositories")
+            if orphaned_repos:
+                recommendations.append(f"Consider creating applications for {len(orphaned_repos)} unmonitored repositories")
+            if result["coverage_stats"]["connection_coverage"] < 50:
+                recommendations.append("Low connection coverage detected. Review naming conventions and application-repository mappings")
+            
+            result["recommendations"] = recommendations
+            
+            return result
+            
+        except Exception as e:
+            debug_print(f"Error in _list_application_repository_connections: {e}")
+            return {
+                "error": str(e),
+                "message": "Failed to list application-repository connections",
+                "organization_id": org_id
+            }
+
+    def _get_current_repository_name(self, repo_name: str = None) -> str:
+        """Get repository name from parameter or auto-detect from current directory"""
+        if repo_name:
+            return repo_name
+        return os.path.basename(os.getcwd())
+    
+    async def _check_endpoint_availability(self, endpoint: str, method: str = "GET") -> bool:
+        """Check if an API endpoint is available by making a test request"""
+        try:
+            # Make a test request to see if the endpoint exists
+            await self.client._make_request(method, endpoint)
+            return True
+        except Exception as e:
+            # Check if it's a 404 (endpoint doesn't exist) vs other errors
+            if "404" in str(e) or "Not Found" in str(e):
+                return False
+            # For other errors (auth, permissions, etc.), assume endpoint exists
+            return True
+    
+    async def _get_organization_id(self, org_id: str = None) -> str:
+        """Get organization ID from parameter or auto-detect from user info"""
+        if org_id:
+            return org_id
+        
+        user_info = await self.client.get_user_info()
+        organizations = user_info.get("user", {}).get("external", {}).get("organizations", [])
+        
+        if not organizations:
+            raise ValueError("No organizations found for user")
+        
+        return organizations[0]["organization"]["id"]
+    
+    async def _find_matching_repositories(self, repo_name: str, org_id: str) -> List[Dict[str, Any]]:
+        """Find repositories matching the given name (case-insensitive)"""
+        repos_response = await self.client.list_repositories(org_id, pageSize=1000)
+        repositories = repos_response.get("repositories", [])
+        
+        # Find matching repositories (case-insensitive)
+        return [
+            repo for repo in repositories
+            if repo.get("name", "").lower() == repo_name.lower()
+        ]
+
+    def _calculate_name_similarity(self, name1: str, name2: str) -> float:
+        """Calculate similarity between two names using simple string matching"""
+        if not name1 or not name2:
+            return 0.0
+        
+        # Simple similarity calculation based on common words and substrings
+        words1 = set(name1.lower().split('-'))
+        words2 = set(name2.lower().split('-'))
+        
+        if not words1 or not words2:
+            return 0.0
+        
+        common_words = words1.intersection(words2)
+        total_words = words1.union(words2)
+        
+        return len(common_words) / len(total_words) if total_words else 0.0
+
+    async def _get_comprehensive_sensitive_data_summary(self, org_id: str = None, time_period: str = "30d", include_trends: bool = True, include_critical_only: bool = False, include_recommendations: bool = True, group_by: str = "data_type", **kwargs) -> Dict[str, Any]:
+        """Get a comprehensive sensitive data summary combining multiple analysis approaches"""
+        try:
+            # Get org_id using helper method
+            org_id = await self._get_organization_id(org_id)
+
+            # Get all sensitive data findings
             if time_period == "all":
                 findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
-                findings = findings_response.get("sensitiveDataFindings", [])
             else:
-                # For time-limited reports, use pagination to get a reasonable sample
-                findings_params = {"pageSize": 1000}
-                findings_response = await self.client.list_sensitive_data_findings(org_id, **findings_params)
-                findings = findings_response.get("sensitiveDataFindings", [])
-
-            # Group findings by data type
-            data_type_findings = {"PII": [], "PCI": [], "PHI": [], "Other": []}
+                findings_response = await self.client.list_sensitive_data_findings(org_id, pageSize=1000)
+            
+            findings = findings_response.get("sensitiveDataFindings", [])
+            
+            # Filter for critical findings only if requested
+            if include_critical_only:
+                critical_data_types = ["PII", "PCI", "PHI"]
+                findings = [f for f in findings if f.get("dataType") in critical_data_types]
+            
+            # Group findings based on the group_by parameter
+            grouped_findings = {}
             for finding in findings:
-                data_type = finding.get("dataType", "Other")
-                if data_type in data_type_findings:
-                    data_type_findings[data_type].append(finding)
+                if group_by == "data_type":
+                    key = finding.get("dataType", "Unknown")
+                elif group_by == "application":
+                    key = finding.get("applicationId", "Unknown")
+                elif group_by == "repository":
+                    key = finding.get("repositoryId", "Unknown")
                 else:
-                    data_type_findings["Other"].append(finding)
-
-            # Generate summary
+                    key = finding.get("dataType", "Unknown")
+                
+                if key not in grouped_findings:
+                    grouped_findings[key] = []
+                grouped_findings[key].append(finding)
+            
+            # Build comprehensive summary
             summary = {
-                "totalFindings": len(findings),
-                "dataTypeBreakdown": data_type_findings
-            }
-
-            # Include recommendations
-            if include_recommendations:
-                summary["recommendations"] = [
-                    {
-                        "dataType": data_type,
-                        "recommendation": f"Review and secure {data_type} data exposure"
-                    }
-                    for data_type, findings in data_type_findings.items()
-                    if findings
-                ]
-
-            # Include risk assessment
-            if include_risk_assessment:
-                summary["riskAssessment"] = self._calculate_sensitive_data_risk_score(findings)
-
-            return {
-                "organizationId": org_id,
-                "timePeriod": time_period,
-                "summary": summary,
+                "organization_id": org_id,
+                "time_period": time_period,
+                "analysis_type": "comprehensive",
+                "total_findings": len(findings),
+                "critical_only": include_critical_only,
+                "group_by": group_by,
+                "grouped_summary": {},
+                "overall_risk_score": self._calculate_sensitive_data_risk_score(findings),
+                "data_type_breakdown": self._calculate_data_type_breakdown(findings),
                 "timestamp": datetime.now().isoformat()
             }
+            
+            # Create grouped summary
+            for group_key, group_findings in grouped_findings.items():
+                summary["grouped_summary"][group_key] = {
+                    "count": len(group_findings),
+                    "data_types": list(set(f.get("dataType", "Unknown") for f in group_findings)),
+                    "risk_score": self._calculate_sensitive_data_risk_score(group_findings),
+                    "applications": list(set(f.get("applicationId") for f in group_findings if f.get("applicationId"))),
+                    "repositories": list(set(f.get("repositoryId") for f in group_findings if f.get("repositoryId")))
+                }
+            
+            # Add trend analysis if requested
+            if include_trends:
+                try:
+                    trend_analysis = await self._analyze_sensitive_data_trends(org_id, analysis_period="90d", include_applications=True, include_repositories=True)
+                    summary["trend_analysis"] = trend_analysis.get("trends", {})
+                except Exception as e:
+                    debug_print(f"Could not include trend analysis: {e}")
+                    summary["trend_analysis"] = {"error": str(e)}
+            
+            # Add recommendations if requested
+            if include_recommendations:
+                recommendations = []
+                
+                # Critical findings recommendations
+                critical_count = len([f for f in findings if f.get("dataType") in ["PII", "PCI", "PHI"]])
+                if critical_count > 0:
+                    recommendations.append(f"Immediate attention required: {critical_count} critical sensitive data findings detected")
+                
+                # High-volume data types
+                for data_type, type_findings in grouped_findings.items():
+                    if len(type_findings) > 10:
+                        recommendations.append(f"High volume of {data_type} findings ({len(type_findings)}) - consider implementing automated remediation")
+                
+                # Coverage recommendations
+                unique_apps = len(set(f.get("applicationId") for f in findings if f.get("applicationId")))
+                unique_repos = len(set(f.get("repositoryId") for f in findings if f.get("repositoryId")))
+                
+                if unique_apps > 0:
+                    recommendations.append(f"Sensitive data detected across {unique_apps} applications - ensure consistent data handling policies")
+                if unique_repos > 0:
+                    recommendations.append(f"Sensitive data detected across {unique_repos} repositories - review code scanning configurations")
+                
+                summary["recommendations"] = recommendations
+            
+            return summary
+            
         except Exception as e:
-            debug_print(f"Error in _generate_sensitive_data_summary: {e}")
-            raise
+            debug_print(f"Error in _get_comprehensive_sensitive_data_summary: {e}")
+            return {
+                "error": str(e),
+                "message": "Failed to generate comprehensive sensitive data summary",
+                "organization_id": org_id
+            }
 
 
 async def main():
