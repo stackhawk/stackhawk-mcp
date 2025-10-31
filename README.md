@@ -350,4 +350,4 @@ Workflows are designed to skip jobs if the latest commit is an automated version
 
 ## MCP Registry name
 
-mcp-name: com.stackhawk/*
+mcp-name: com.stackhawk/stackhawk
