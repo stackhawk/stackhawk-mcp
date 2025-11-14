@@ -170,6 +170,58 @@ StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-po
 - Review the [Available Tools & API](#available-tools--api) section for supported operations.
 - For advanced integration, see the example tool usage in this README or explore the codebase for custom workflows.
 
+### GitHub Copilot Agents
+
+StackHawk can be added to the GitHub Coding Agent as an MCP server or as its own GitHub Custom Agent.
+
+#### Add to GitHub Coding Agent
+
+You can add StackHawk MCP to the GitHub Copilot Coding Agent. This gives the agent all the `stackhawk/` tools.
+
+**StackHawk MCP installation into the Coding Agent**
+
+[General instructions on GitHub](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp#adding-an-mcp-configuration-to-your-repository)
+
+For StackHawk MCP, the MCP Configuration JSON should look something like this:
+
+```yaml
+{
+  "mcpServers": {
+    "stackhawk": {
+      "type": "local",
+      "tools": [
+        "*"
+      ],
+      "command": "uvx",
+      "args": [
+        "stackhawk-mcp"
+      ],
+      "env": {
+        "STACKHAWK_API_KEY": "COPILOT_MCP_STACKHAWK_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Then in the Repository's `Settings->Environments->copilot->Environment Secrets`, add `COPILOT_MCP_STACKHAWK_API_KEY` with your StackHawk API Key.
+
+[Installation verification instructions](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp#validating-your-mcp-configuration)
+
+#### StackHawk Onboarding Agent as a GitHub Copilot Custom Agent
+
+You can the StackHawk Onboarding Agent as a custom agent at the enterprise, organization, or repository level in GitHub.  When added, the StackHawk Onboarding Agent becomes a selectable option in the Copilot Agent Chat with context to help with onboarding, plus it installs `stackhawk-mcp` so the agent has access to all of those tools.
+
+**StackHawk Onboarding Agent installation**
+
+The general approach is to take the [StackHawk Onboarding Agent defintion](https://github.com/github/awesome-copilot/blob/main/agents/stackhawk-security-onboarding.agent.md) and apply it to either the desired repository, enterprise, or organization in GitHub.
+
+- [Instructions for installing into a repository on GitHub](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents#creating-a-custom-agent-profile-for-a-repository)
+- [Instructions for installing into an enterprise on GitHub](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-agents/prepare-for-custom-agents)
+- [Instructions for installing into an organization GitHub](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/administer-copilot/manage-for-organization/prepare-for-custom-agents)
+
+Note that the `mcp-servers` block in the StackHawk Onboarding Agent definition references an environment variable called `COPILOT_MCP_STACKHAWK_API_KEY`. Go to the Repository's `Settings->Environments->copilot->Environment Secrets`, add `COPILOT_MCP_STACKHAWK_API_KEY` with your StackHawk API Key.
+
 ---
 
 ## Configuration
@@ -348,6 +400,4 @@ Workflows are designed to skip jobs if the latest commit is an automated version
 3. Click "Run workflow" and choose the desired bump type (minor or major).
 4. The workflow will handle the rest!
 
-## MCP Registry name
-
-mcp-name: com.stackhawk/stackhawk
+<!-- mcp-name: com.stackhawk/stackhawk -->
