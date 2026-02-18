@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-StackHawk MCP Server - 
+StackHawk MCP Server -
 
 This MCP server provides security monitoring and analytics capabilities by integrating
 with the StackHawk API. It offers tools for both developer integration and security
@@ -25,14 +25,7 @@ from jsonschema import validate, ValidationError
 from mcp.server import Server
 from mcp.server import NotificationOptions
 from mcp.server.models import InitializationOptions
-from mcp.types import (
-    Resource,
-    Tool,
-    TextContent,
-    ImageContent,
-    EmbeddedResource,
-    LoggingLevel
-)
+from mcp.types import Resource, Tool, TextContent, ImageContent, EmbeddedResource, LoggingLevel
 import mcp.server.stdio
 import mcp.types as types
 from stackhawk_mcp import __version__
@@ -40,8 +33,8 @@ from stackhawk_mcp import __version__
 # Configure logging to stderr so Claude Desktop can see it
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stderr)]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stderr)],
 )
 logger = logging.getLogger("stackhawk-mcp")
 
@@ -58,11 +51,41 @@ class StackHawkClient:
 
     # List of valid tech flags from StackHawk documentation
     VALID_TECH_FLAGS = {
-        "Db", "Db.MySQL", "Db.PostgreSQL", "Db.Microsoft SQL Server", "Db.Oracle", "Db.SQLite", "Db.Microsoft Access", "Db.Firebird", "Db.SAP MaxDB", "Db.Sybase", "Db.IBM DB2", "Db.HypersonicSQL", "Db.MongoDB", "Db.CouchDB",
-        "Language", "Language.ASP", "Language.C", "Language.Java", "Language.Java.Spring", "Language.JavaScript", "Language.JSP/Servlet", "Language.PHP", "Language.Python", "Language.Ruby", "Language.XML",
-        "OS", "OS.Linux", "OS.MacOS", "OS.Windows",
-        "SCM", "SCM.Git", "SCM.SVN",
-        "WS", "WS.Apache", "WS.IIS"
+        "Db",
+        "Db.MySQL",
+        "Db.PostgreSQL",
+        "Db.Microsoft SQL Server",
+        "Db.Oracle",
+        "Db.SQLite",
+        "Db.Microsoft Access",
+        "Db.Firebird",
+        "Db.SAP MaxDB",
+        "Db.Sybase",
+        "Db.IBM DB2",
+        "Db.HypersonicSQL",
+        "Db.MongoDB",
+        "Db.CouchDB",
+        "Language",
+        "Language.ASP",
+        "Language.C",
+        "Language.Java",
+        "Language.Java.Spring",
+        "Language.JavaScript",
+        "Language.JSP/Servlet",
+        "Language.PHP",
+        "Language.Python",
+        "Language.Ruby",
+        "Language.XML",
+        "OS",
+        "OS.Linux",
+        "OS.MacOS",
+        "OS.Windows",
+        "SCM",
+        "SCM.Git",
+        "SCM.SVN",
+        "WS",
+        "WS.Apache",
+        "WS.IIS",
     }
 
     def __init__(self, api_key: str, base_url: str = "https://api.stackhawk.com"):
@@ -77,17 +100,17 @@ class StackHawkClient:
         """Get or create HTTP client"""
         if self._client is None:
             self._client = httpx.AsyncClient(
-                timeout=30.0,
-                headers={
-                    "User-Agent": f"StackHawk-MCP/{STACKHAWK_MCP_VERSION}"
-                }
+                timeout=30.0, headers={"User-Agent": f"StackHawk-MCP/{STACKHAWK_MCP_VERSION}"}
             )
         return self._client
 
     async def _ensure_authenticated(self):
         """Ensure we have a valid access token"""
-        if not self._authenticated or not self.access_token or (
-                self.token_expires_at and datetime.now() >= self.token_expires_at):
+        if (
+            not self._authenticated
+            or not self.access_token
+            or (self.token_expires_at and datetime.now() >= self.token_expires_at)
+        ):
             await self._authenticate()
 
     async def _authenticate(self):
@@ -95,8 +118,7 @@ class StackHawkClient:
         try:
             client = await self._get_client()
             response = await client.get(
-                f"{self.base_url}/api/v1/auth/login",
-                headers={"X-ApiKey": self.api_key}
+                f"{self.base_url}/api/v1/auth/login", headers={"X-ApiKey": self.api_key}
             )
             response.raise_for_status()
 
@@ -152,7 +174,9 @@ class StackHawkClient:
         """List scans for an organization"""
         return await self._make_request("GET", f"/api/v1/scan/{org_id}", params=params)
 
-    async def list_organization_findings(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def list_organization_findings(
+        self, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """List organization-wide findings, with optional pagination for all results."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
         if all_results:
@@ -161,7 +185,9 @@ class StackHawkClient:
         else:
             return await self._make_request("GET", endpoint, params=params)
 
-    async def get_organization_findings_detailed(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def get_organization_findings_detailed(
+        self, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """Get detailed organization findings with comprehensive filtering options and optional pagination."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
         if all_results:
@@ -172,13 +198,12 @@ class StackHawkClient:
             default_params.update(params)
             return await self._make_request("GET", endpoint, params=default_params)
 
-    async def get_application_findings(self, app_id: str, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def get_application_findings(
+        self, app_id: str, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """Get findings for a specific application, with optional pagination for all results."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
-        default_params = {
-            "pageSize": 100,
-            "appIds": app_id
-        }
+        default_params = {"pageSize": 100, "appIds": app_id}
         default_params.update(params)
         if all_results:
             findings = await self._fetch_all_pages(endpoint, default_params)
@@ -186,13 +211,12 @@ class StackHawkClient:
         else:
             return await self._make_request("GET", endpoint, params=default_params)
 
-    async def get_application_findings_summary(self, app_id: str, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def get_application_findings_summary(
+        self, app_id: str, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """Get summary of findings for a specific application, with optional pagination for all results."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
-        default_params = {
-            "pageSize": 50,
-            "appIds": app_id
-        }
+        default_params = {"pageSize": 50, "appIds": app_id}
         default_params.update(params)
         if all_results:
             findings = await self._fetch_all_pages(endpoint, default_params)
@@ -210,17 +234,23 @@ class StackHawkClient:
 
     async def get_repository_details(self, org_id: str, repo_id: str, **params) -> Dict[str, Any]:
         """Get detailed information about a specific repository"""
-        return await self._make_request("GET", f"/api/v1/org/{org_id}/repos/{repo_id}", params=params)
+        return await self._make_request(
+            "GET", f"/api/v1/org/{org_id}/repos/{repo_id}", params=params
+        )
 
-    async def get_repository_security_scan(self, org_id: str, repo_id: str, **params) -> Dict[str, Any]:
+    async def get_repository_security_scan(
+        self, org_id: str, repo_id: str, **params
+    ) -> Dict[str, Any]:
         """Get security scan results for a specific repository"""
-        return await self._make_request("GET", f"/api/v1/org/{org_id}/repos/{repo_id}/security-scan", params=params)
+        return await self._make_request(
+            "GET", f"/api/v1/org/{org_id}/repos/{repo_id}/security-scan", params=params
+        )
 
     async def get_yaml_schema(self) -> Dict[str, Any]:
         """Get the StackHawk YAML configuration schema from the official URL"""
         # Use the official StackHawk schema URL
         schema_url = "https://download.stackhawk.com/hawk/jsonschema/hawkconfig.json"
-        
+
         try:
             client = await self._get_client()
             response = await client.get(schema_url)
@@ -255,7 +285,9 @@ class StackHawkClient:
             findings = response.get("findings") or response.get("sensitiveDataFindings") or []
             all_findings.extend(findings)
 
-            debug_print(f"Page {page_count}: got {len(findings)} findings, total so far: {len(all_findings)}")
+            debug_print(
+                f"Page {page_count}: got {len(findings)} findings, total so far: {len(all_findings)}"
+            )
 
             if len(findings) < page_size:
                 debug_print(f"No more pages, total findings: {len(all_findings)}")
@@ -264,7 +296,9 @@ class StackHawkClient:
 
         return all_findings
 
-    async def list_sensitive_data_findings(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def list_sensitive_data_findings(
+        self, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """List sensitive data findings for an organization (aggregated from repositories)"""
         # This endpoint is not available in the official StackHawk API
         # Aggregate sensitive data from all repositories in the organization
@@ -272,7 +306,7 @@ class StackHawkClient:
             # Get all repositories
             repos_response = await self.list_repositories(org_id, pageSize=1000)
             repositories = repos_response.get("repositories", [])
-            
+
             all_findings = []
             for repo in repositories:
                 try:
@@ -280,43 +314,46 @@ class StackHawkClient:
                         org_id, repo["id"], all_results=all_results, **params
                     )
                     repo_findings = repo_sensitive_data.get("sensitiveDataFindings", [])
-                    
+
                     # Add repository context to each finding
                     for finding in repo_findings:
                         finding["repositoryId"] = repo["id"]
                         finding["repositoryName"] = repo.get("name", "")
-                    
+
                     all_findings.extend(repo_findings)
                 except Exception as e:
-                    debug_print(f"Could not get sensitive data for repository {repo.get('id', 'unknown')}: {e}")
+                    debug_print(
+                        f"Could not get sensitive data for repository {repo.get('id', 'unknown')}: {e}"
+                    )
                     continue
-            
+
             return {
                 "sensitiveDataFindings": all_findings,
                 "note": "Aggregated from repository-level sensitive data - org-level endpoint not available in official API",
-                "totalRepositoriesChecked": len(repositories)
+                "totalRepositoriesChecked": len(repositories),
             }
-            
+
         except Exception as e:
             debug_print(f"Error aggregating sensitive data findings: {e}")
             return {
                 "sensitiveDataFindings": [],
                 "error": str(e),
-                "note": "Could not aggregate sensitive data - org-level endpoint not available in official API"
+                "note": "Could not aggregate sensitive data - org-level endpoint not available in official API",
             }
 
-    async def get_sensitive_data_findings_detailed(self, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def get_sensitive_data_findings_detailed(
+        self, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """Get detailed sensitive data findings with comprehensive filtering options and optional pagination."""
         # This method now delegates to the aggregated implementation
         return await self.list_sensitive_data_findings(org_id, all_results=all_results, **params)
 
-    async def get_application_sensitive_data(self, app_id: str, org_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def get_application_sensitive_data(
+        self, app_id: str, org_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """Get sensitive data findings for a specific application"""
         endpoint = f"/api/v1/org/{org_id}/sensitive-data"
-        default_params = {
-            "pageSize": 100,
-            "appIds": app_id
-        }
+        default_params = {"pageSize": 100, "appIds": app_id}
         default_params.update(params)
         if all_results:
             findings = await self._fetch_all_pages(endpoint, default_params)
@@ -324,7 +361,9 @@ class StackHawkClient:
         else:
             return await self._make_request("GET", endpoint, params=default_params)
 
-    async def get_repository_sensitive_data(self, org_id: str, repo_id: str, all_results: bool = False, **params) -> Dict[str, Any]:
+    async def get_repository_sensitive_data(
+        self, org_id: str, repo_id: str, all_results: bool = False, **params
+    ) -> Dict[str, Any]:
         """Get sensitive data findings for a specific repository (using official OAS endpoint)"""
         # Official endpoint per StackHawk OpenAPI specification
         endpoint = f"/api/v1/org/{org_id}/repo/{repo_id}/sensitive/list"
@@ -347,9 +386,9 @@ class StackHawkClient:
                 {"type": "Email", "description": "Email addresses"},
                 {"type": "Phone", "description": "Phone numbers"},
                 {"type": "Address", "description": "Physical addresses"},
-                {"type": "API_Key", "description": "API keys and tokens"}
+                {"type": "API_Key", "description": "API keys and tokens"},
             ],
-            "note": "Standard sensitive data types - endpoint not available in official API"
+            "note": "Standard sensitive data types - endpoint not available in official API",
         }
 
     async def get_sensitive_data_summary(self, org_id: str, **params) -> Dict[str, Any]:
@@ -359,28 +398,28 @@ class StackHawkClient:
         try:
             findings_response = await self.list_sensitive_data_findings(org_id, pageSize=1000)
             findings = findings_response.get("sensitiveDataFindings", [])
-            
+
             # Calculate summary statistics
             summary = {
                 "totalFindings": len(findings),
                 "dataTypeBreakdown": self._calculate_data_type_breakdown(findings),
                 "riskScore": self._calculate_sensitive_data_risk_score(findings),
-                "note": "Calculated summary - endpoint not available in official API"
+                "note": "Calculated summary - endpoint not available in official API",
             }
-            
+
             return summary
         except Exception as e:
             debug_print(f"Error calculating sensitive data summary: {e}")
             return {
                 "error": str(e),
-                "note": "Could not calculate summary - endpoint not available in official API"
+                "note": "Could not calculate summary - endpoint not available in official API",
             }
 
     async def _get_project_open_stackhawk_issues(self, config_path: str = None) -> dict:
         """Discover StackHawk config, extract applicationId, and summarize open issues for the app."""
         import os
         import yaml
-        
+
         # 1. Discover config file if not provided
         if not config_path:
             candidates = glob.glob("stackhawk.y*ml") + glob.glob("stackhawk*.y*ml")
@@ -392,7 +431,7 @@ class StackHawkClient:
         if not os.path.exists(abs_config_path):
             print(f"[DEBUG] File not found: {abs_config_path}")
             return {"error": f"Config file not found: {abs_config_path}"}
-        
+
         # 2. Parse config for applicationId and failureThreshold
         try:
             with open(abs_config_path, "r") as f:
@@ -410,10 +449,12 @@ class StackHawkClient:
         except Exception as e:
             print(f"[DEBUG] Error parsing config: {e}")
             return {"error": f"Failed to parse config: {e}"}
-        
+
         # 3. Fetch open vulnerabilities for this app
         try:
-            result = await self._get_application_vulnerabilities(app_id, severity_filter="All", max_results=1000)
+            result = await self._get_application_vulnerabilities(
+                app_id, severity_filter="All", max_results=1000
+            )
             findings = result.get("findings", [])
             # Only include findings that are High, Medium, or >= failureThreshold
             allowed_severities = ["High", "Medium"]
@@ -427,7 +468,7 @@ class StackHawkClient:
                 "open_issues_summary": self._calculate_severity_breakdown(filtered_findings),
                 "totalOpenIssues": len(filtered_findings),
                 "openIssues": filtered_findings,
-                "note": "Returned issues are High, Medium, or at/above the configured failureThreshold (if set in hawk section) so chat can help fix them."
+                "note": "Returned issues are High, Medium, or at/above the configured failureThreshold (if set in hawk section) so chat can help fix them.",
             }
         except Exception as e:
             print(f"[DEBUG] Error fetching vulnerabilities: {e}")
@@ -443,7 +484,14 @@ class StackHawkClient:
         payload = {"techFlags": filtered_flags}
         return await self._make_request("PUT", f"/api/v1/app/{app_id}/policy/flags", json=payload)
 
-    async def create_application(self, org_id: str, app_name: str, language: str = None, frameworks: list = None, tech_flags: dict = None) -> dict:
+    async def create_application(
+        self,
+        org_id: str,
+        app_name: str,
+        language: str = None,
+        frameworks: list = None,
+        tech_flags: dict = None,
+    ) -> dict:
         """Create a new StackHawk application in the given org, and set tech flags if provided."""
         payload = {
             "name": app_name,
@@ -469,6 +517,7 @@ class StackHawkClient:
         import os
         import glob
         import asyncio
+
         # 1. Find the config file (absolute path)
         if not os.path.isabs(config_path):
             # Search up the tree for the config file
@@ -488,7 +537,12 @@ class StackHawkClient:
                 # Try glob for stackhawk*.y*ml
                 search_dir = os.getcwd()
                 while True:
-                    for pat in ["stackhawk.yml", "stackhawk.yaml", "stackhawk*.yml", "stackhawk*.yaml"]:
+                    for pat in [
+                        "stackhawk.yml",
+                        "stackhawk.yaml",
+                        "stackhawk*.yml",
+                        "stackhawk*.yaml",
+                    ]:
                         for match in glob.glob(os.path.join(search_dir, pat)):
                             config_path = os.path.abspath(match)
                             found = True
@@ -502,17 +556,17 @@ class StackHawkClient:
                         break
                     search_dir = parent
             if not found:
-                return {"success": False, "error": f"Could not find StackHawk config file (tried {config_path})"}
+                return {
+                    "success": False,
+                    "error": f"Could not find StackHawk config file (tried {config_path})",
+                }
         # 2. cd to the directory containing the config
         config_dir = os.path.dirname(config_path)
         config_filename = os.path.basename(config_path)
         api_key = self.api_key
         cmd = ["hawk", "--api-key", api_key, "scan", config_filename]
         process = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=config_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            *cmd, cwd=config_dir, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
         stdout_lines = []
         stderr_lines = []
@@ -542,13 +596,26 @@ class StackHawkClient:
             "stdout": stdout_lines,
             "stderr": stderr_lines,
             "findings_summary": findings_summary,
-            "note": f"Scan output and summary returned. Ran from {config_dir}. For more details, check the StackHawk dashboard or ask for findings in chat."
+            "note": f"Scan output and summary returned. Ran from {config_dir}. For more details, check the StackHawk dashboard or ask for findings in chat.",
         }
 
-    async def _get_application_vulnerabilities(self, app_id: str = None, severity_filter: str = "All", include_remediation: bool = True, max_results: int = 100, app_name: str = None, triage_mode: bool = False, failure_threshold: str = None, config_path: str = None, config_content: str = None, **kwargs) -> Dict[str, Any]:
+    async def _get_application_vulnerabilities(
+        self,
+        app_id: str = None,
+        severity_filter: str = "All",
+        include_remediation: bool = True,
+        max_results: int = 100,
+        app_name: str = None,
+        triage_mode: bool = False,
+        failure_threshold: str = None,
+        config_path: str = None,
+        config_content: str = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Get vulnerabilities for a specific application, with optional triage filtering (at/above failure threshold)."""
         import os
         import yaml
+
         try:
             # 1. If triage_mode, parse config for failure_threshold if not provided
             if triage_mode and not failure_threshold:
@@ -598,23 +665,32 @@ class StackHawkClient:
                     org_id = orgs[0]["organization"]["id"]
                     apps_response = await self.list_applications(org_id, pageSize=1000)
                     applications = apps_response.get("applications", [])
-                    matches = [a for a in applications if a.get("name", "").lower() == app_name.lower()]
+                    matches = [
+                        a for a in applications if a.get("name", "").lower() == app_name.lower()
+                    ]
                     if len(matches) == 1:
                         chosen_app_id = matches[0]["id"]
                     elif len(matches) > 1:
-                        return {"error": f"Multiple applications found with name '{app_name}'. Please specify app_id.", "matches": [a["id"] for a in matches]}
+                        return {
+                            "error": f"Multiple applications found with name '{app_name}'. Please specify app_id.",
+                            "matches": [a["id"] for a in matches],
+                        }
                     elif len(applications) == 1:
                         chosen_app_id = applications[0]["id"]
                     else:
-                        return {"error": f"Could not determine applicationId. Please specify app_id or ensure stackhawk.yml is present."}
+                        return {
+                            "error": f"Could not determine applicationId. Please specify app_id or ensure stackhawk.yml is present."
+                        }
                 app_id = chosen_app_id
             # Get org_id from user info if not provided
-            org_id = kwargs.get('org_id')
+            org_id = kwargs.get("org_id")
             if not org_id:
                 user_info = await self.get_user_info()
                 org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
             findings_params = {"pageSize": max_results}
-            findings_response = await self.get_application_findings(app_id, org_id, **findings_params)
+            findings_response = await self.get_application_findings(
+                app_id, org_id, **findings_params
+            )
             findings = findings_response.get("findings", [])
             # Apply severity filter if not triage_mode
             if not triage_mode and severity_filter != "All":
@@ -641,7 +717,7 @@ class StackHawkClient:
                 "findings": findings,
                 "severityBreakdown": self._calculate_severity_breakdown(findings),
                 "timestamp": datetime.now().isoformat(),
-                "note": "These are application-specific vulnerabilities. Use triage_mode for CI/CD gating or remediation workflows."
+                "note": "These are application-specific vulnerabilities. Use triage_mode for CI/CD gating or remediation workflows.",
             }
             if triage_mode:
                 result["failureThreshold"] = failure_threshold or "High/Medium"
@@ -652,7 +728,7 @@ class StackHawkClient:
             return {
                 "error": str(e),
                 "message": "Failed to get application vulnerabilities",
-                "applicationId": app_id
+                "applicationId": app_id,
             }
 
 
@@ -683,20 +759,20 @@ class StackHawkMCPServer:
                         uri="stackhawk://auth/user",
                         name="Current User",
                         description="Information about the authenticated user and their organizations",
-                        mimeType="application/json"
+                        mimeType="application/json",
                     ),
                     Resource(
                         uri="stackhawk://applications",
                         name="Applications Overview",
                         description="Overview of all applications across organizations",
-                        mimeType="application/json"
+                        mimeType="application/json",
                     ),
                     Resource(
                         uri="stackhawk://vulnerabilities/summary",
                         name="Vulnerability Summary",
                         description="High-level vulnerability metrics and trends",
-                        mimeType="application/json"
-                    )
+                        mimeType="application/json",
+                    ),
                 ]
             except Exception as e:
                 debug_print(f"Error in list_resources: {e}")
@@ -721,15 +797,16 @@ class StackHawkMCPServer:
                     for org in user_info["user"]["external"]["organizations"]:
                         org_id = org["organization"]["id"]
                         try:
-                            apps_response = await self.client.list_applications(org_id, pageSize=100)
+                            apps_response = await self.client.list_applications(
+                                org_id, pageSize=100
+                            )
                             all_apps.extend(apps_response.get("applications", []))
                         except Exception as e:
                             debug_print(f"Error getting apps for org {org_id}: {e}")
 
-                    return json.dumps({
-                        "totalApplications": len(all_apps),
-                        "applications": all_apps
-                    }, indent=2)
+                    return json.dumps(
+                        {"totalApplications": len(all_apps), "applications": all_apps}, indent=2
+                    )
 
                 elif uri_str == "stackhawk://vulnerabilities/summary":
                     return await self._generate_vulnerability_summary()
@@ -755,8 +832,8 @@ class StackHawkMCPServer:
                             "properties": {
                                 "org_id": {"type": "string", "description": "Organization ID"}
                             },
-                            "required": ["org_id"]
-                        }
+                            "required": ["org_id"],
+                        },
                     ),
                     Tool(
                         name="list_applications",
@@ -765,10 +842,13 @@ class StackHawkMCPServer:
                             "type": "object",
                             "properties": {
                                 "org_id": {"type": "string", "description": "Organization ID"},
-                                "page_size": {"type": "integer", "description": "Page size (optional)"}
+                                "page_size": {
+                                    "type": "integer",
+                                    "description": "Page size (optional)",
+                                },
                             },
-                            "required": ["org_id"]
-                        }
+                            "required": ["org_id"],
+                        },
                     ),
                     Tool(
                         name="search_vulnerabilities",
@@ -777,11 +857,17 @@ class StackHawkMCPServer:
                             "type": "object",
                             "properties": {
                                 "org_id": {"type": "string", "description": "Organization ID"},
-                                "severity_filter": {"type": "string", "description": "Filter by severity (Critical, High, Medium, Low)"},
-                                "time_range": {"type": "string", "description": "Time range for search (e.g., '30d', '7d')"}
+                                "severity_filter": {
+                                    "type": "string",
+                                    "description": "Filter by severity (Critical, High, Medium, Low)",
+                                },
+                                "time_range": {
+                                    "type": "string",
+                                    "description": "Time range for search (e.g., '30d', '7d')",
+                                },
                             },
-                            "required": ["org_id"]
-                        }
+                            "required": ["org_id"],
+                        },
                     ),
                     Tool(
                         name="generate_security_dashboard",
@@ -791,8 +877,8 @@ class StackHawkMCPServer:
                             "properties": {
                                 "org_id": {"type": "string", "description": "Organization ID"}
                             },
-                            "required": ["org_id"]
-                        }
+                            "required": ["org_id"],
+                        },
                     ),
                     Tool(
                         name="create_stackhawk_config",
@@ -800,13 +886,16 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "application_id": {"type": "string", "description": "StackHawk Application ID"},
+                                "application_id": {
+                                    "type": "string",
+                                    "description": "StackHawk Application ID",
+                                },
                                 "app_name": {"type": "string", "description": "Application name"},
                                 "host": {"type": "string", "description": "Host for the app"},
-                                "port": {"type": "integer", "description": "Port for the app"}
+                                "port": {"type": "integer", "description": "Port for the app"},
                             },
-                            "required": ["application_id", "app_name", "host", "port"]
-                        }
+                            "required": ["application_id", "app_name", "host", "port"],
+                        },
                     ),
                     Tool(
                         name="validate_stackhawk_config",
@@ -814,15 +903,18 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "yaml_content": {"type": "string", "description": "YAML content to validate"}
+                                "yaml_content": {
+                                    "type": "string",
+                                    "description": "YAML content to validate",
+                                }
                             },
-                            "required": ["yaml_content"]
-                        }
+                            "required": ["yaml_content"],
+                        },
                     ),
                     Tool(
                         name="get_stackhawk_schema",
                         description="Get the StackHawk YAML schema",
-                        inputSchema={"type": "object", "properties": {}}
+                        inputSchema={"type": "object", "properties": {}},
                     ),
                     Tool(
                         name="validate_field_exists",
@@ -830,10 +922,13 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "field_path": {"type": "string", "description": "Field path to validate"}
+                                "field_path": {
+                                    "type": "string",
+                                    "description": "Field path to validate",
+                                }
                             },
-                            "required": ["field_path"]
-                        }
+                            "required": ["field_path"],
+                        },
                     ),
                     Tool(
                         name="check_repository_attack_surface",
@@ -841,12 +936,24 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "repo_name": {"type": "string", "description": "Repository name to check (optional, defaults to current directory name)"},
-                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
-                                "include_vulnerabilities": {"type": "boolean", "description": "Include vulnerability information (default: true)"},
-                                "include_apps": {"type": "boolean", "description": "Include connected applications (default: true)"}
-                            }
-                        }
+                                "repo_name": {
+                                    "type": "string",
+                                    "description": "Repository name to check (optional, defaults to current directory name)",
+                                },
+                                "org_id": {
+                                    "type": "string",
+                                    "description": "Organization ID (optional, auto-detected if omitted)",
+                                },
+                                "include_vulnerabilities": {
+                                    "type": "boolean",
+                                    "description": "Include vulnerability information (default: true)",
+                                },
+                                "include_apps": {
+                                    "type": "boolean",
+                                    "description": "Include connected applications (default: true)",
+                                },
+                            },
+                        },
                     ),
                     Tool(
                         name="check_repository_sensitive_data",
@@ -854,12 +961,24 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "repo_name": {"type": "string", "description": "Repository name to check (optional, defaults to current directory name)"},
-                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
-                                "data_type_filter": {"type": "string", "description": "Filter by sensitive data type (e.g., PII, PCI, PHI, or All for no filter)."},
-                                "include_remediation": {"type": "boolean", "description": "Include remediation recommendations (default: true)"}
-                            }
-                        }
+                                "repo_name": {
+                                    "type": "string",
+                                    "description": "Repository name to check (optional, defaults to current directory name)",
+                                },
+                                "org_id": {
+                                    "type": "string",
+                                    "description": "Organization ID (optional, auto-detected if omitted)",
+                                },
+                                "data_type_filter": {
+                                    "type": "string",
+                                    "description": "Filter by sensitive data type (e.g., PII, PCI, PHI, or All for no filter).",
+                                },
+                                "include_remediation": {
+                                    "type": "boolean",
+                                    "description": "Include remediation recommendations (default: true)",
+                                },
+                            },
+                        },
                     ),
                     Tool(
                         name="list_application_repository_connections",
@@ -867,23 +986,50 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
-                                "include_repo_details": {"type": "boolean", "description": "Include repository security details (default: true)"},
-                                "include_app_details": {"type": "boolean", "description": "Include application security details (default: true)"},
-                                "filter_connected_only": {"type": "boolean", "description": "Only show apps/repos that have connections (default: false)"}
-                            }
-                        }
+                                "org_id": {
+                                    "type": "string",
+                                    "description": "Organization ID (optional, auto-detected if omitted)",
+                                },
+                                "include_repo_details": {
+                                    "type": "boolean",
+                                    "description": "Include repository security details (default: true)",
+                                },
+                                "include_app_details": {
+                                    "type": "boolean",
+                                    "description": "Include application security details (default: true)",
+                                },
+                                "filter_connected_only": {
+                                    "type": "boolean",
+                                    "description": "Only show apps/repos that have connections (default: false)",
+                                },
+                            },
+                        },
                     ),
                     Tool(
                         name="setup_stackhawk_for_project",
-                        description="Set up StackHawk for a new project",
+                        description="Set up StackHawk for a new project. Finds or creates the application and generates a complete stackhawk.yml configuration file ready for scanning.",
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID (optional)"},
-                                "app_name": {"type": "string", "description": "Application name (optional)"}
-                            }
-                        }
+                                "host": {
+                                    "type": "string",
+                                    "description": "Target URL to scan (e.g., https://localhost:3000, https://ginandjuice.shop)",
+                                },
+                                "environment": {
+                                    "type": "string",
+                                    "description": "Environment name (default: dev)",
+                                },
+                                "org_id": {
+                                    "type": "string",
+                                    "description": "Organization ID (optional, auto-detected if omitted)",
+                                },
+                                "app_name": {
+                                    "type": "string",
+                                    "description": "Application name (optional, defaults to current directory name)",
+                                },
+                            },
+                            "required": ["host"],
+                        },
                     ),
                     Tool(
                         name="get_stackhawk_scan_instructions",
@@ -891,9 +1037,12 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "config_path": {"type": "string", "description": "Path to StackHawk config file (default: stackhawk.yml)"}
-                            }
-                        }
+                                "config_path": {
+                                    "type": "string",
+                                    "description": "Path to StackHawk config file (default: stackhawk.yml)",
+                                }
+                            },
+                        },
                     ),
                     Tool(
                         name="run_stackhawk_scan",
@@ -901,9 +1050,12 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "config_path": {"type": "string", "description": "Path to StackHawk config file (default: stackhawk.yml)"}
-                            }
-                        }
+                                "config_path": {
+                                    "type": "string",
+                                    "description": "Path to StackHawk config file (default: stackhawk.yml)",
+                                }
+                            },
+                        },
                     ),
                     Tool(
                         name="get_app_findings_for_triage",
@@ -911,11 +1063,20 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "app_id": {"type": "string", "description": "StackHawk application ID (optional)"},
-                                "config_path": {"type": "string", "description": "Path to StackHawk config file (optional, default: stackhawk.yml)"},
-                                "config_content": {"type": "string", "description": "YAML content of the StackHawk config file (optional, takes precedence over config_path)"}
-                            }
-                        }
+                                "app_id": {
+                                    "type": "string",
+                                    "description": "StackHawk application ID (optional)",
+                                },
+                                "config_path": {
+                                    "type": "string",
+                                    "description": "Path to StackHawk config file (optional, default: stackhawk.yml)",
+                                },
+                                "config_content": {
+                                    "type": "string",
+                                    "description": "YAML content of the StackHawk config file (optional, takes precedence over config_path)",
+                                },
+                            },
+                        },
                     ),
                     Tool(
                         name="get_sensitive_data_summary",
@@ -923,14 +1084,32 @@ class StackHawkMCPServer:
                         inputSchema={
                             "type": "object",
                             "properties": {
-                                "org_id": {"type": "string", "description": "Organization ID (optional, auto-detected if omitted)"},
-                                "time_period": {"type": "string", "description": "Time period for analysis (default: 30d)"},
-                                "include_trends": {"type": "boolean", "description": "Include trend analysis (default: true)"},
-                                "include_critical_only": {"type": "boolean", "description": "Focus only on critical findings (default: false)"},
-                                "include_recommendations": {"type": "boolean", "description": "Include remediation recommendations (default: true)"},
-                                "group_by": {"type": "string", "description": "Group findings by 'data_type', 'application', or 'repository' (default: data_type)"}
-                            }
-                        }
+                                "org_id": {
+                                    "type": "string",
+                                    "description": "Organization ID (optional, auto-detected if omitted)",
+                                },
+                                "time_period": {
+                                    "type": "string",
+                                    "description": "Time period for analysis (default: 30d)",
+                                },
+                                "include_trends": {
+                                    "type": "boolean",
+                                    "description": "Include trend analysis (default: true)",
+                                },
+                                "include_critical_only": {
+                                    "type": "boolean",
+                                    "description": "Focus only on critical findings (default: false)",
+                                },
+                                "include_recommendations": {
+                                    "type": "boolean",
+                                    "description": "Include remediation recommendations (default: true)",
+                                },
+                                "group_by": {
+                                    "type": "string",
+                                    "description": "Group findings by 'data_type', 'application', or 'repository' (default: data_type)",
+                                },
+                            },
+                        },
                     ),
                 ]
                 return tools
@@ -984,7 +1163,7 @@ class StackHawkMCPServer:
                         config_path=arguments.get("config_path"),
                         config_content=arguments.get("config_content"),
                         triage_mode=True,
-                        failure_threshold=None
+                        failure_threshold=None,
                     )
                     return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
                 elif name == "get_sensitive_data_summary":
@@ -1009,14 +1188,16 @@ class StackHawkMCPServer:
     async def _get_schema(self) -> Dict[str, Any]:
         """Get the StackHawk YAML schema with caching"""
         now = datetime.now()
-        
+
         # Check if we have a valid cached schema
-        if (self._schema_cache is not None and 
-            self._schema_cache_time is not None and 
-            now - self._schema_cache_time < self._schema_cache_ttl):
+        if (
+            self._schema_cache is not None
+            and self._schema_cache_time is not None
+            and now - self._schema_cache_time < self._schema_cache_ttl
+        ):
             debug_print("Using cached schema")
             return self._schema_cache
-        
+
         try:
             debug_print("Fetching schema from StackHawk official URL...")
             schema = await self.client.get_yaml_schema()
@@ -1040,30 +1221,21 @@ class StackHawkMCPServer:
                         "properties": {
                             "applicationId": {"type": "string"},
                             "env": {"type": "string"},
-                            "host": {"type": "string"}
+                            "host": {"type": "string"},
                         },
-                        "required": ["applicationId", "env", "host"]
+                        "required": ["applicationId", "env", "host"],
                     },
-                    "hawk": {
-                        "type": "object",
-                        "description": "HawkScan settings"
-                    },
-                    "hawkAddOn": {
-                        "type": "object",
-                        "description": "Add-ons and custom scripts"
-                    },
+                    "hawk": {"type": "object", "description": "HawkScan settings"},
+                    "hawkAddOn": {"type": "object", "description": "Add-ons and custom scripts"},
                     "tags": {
                         "type": "array",
                         "items": {
                             "type": "object",
-                            "properties": {
-                                "name": {"type": "string"},
-                                "value": {"type": "string"}
-                            }
-                        }
-                    }
+                            "properties": {"name": {"type": "string"}, "value": {"type": "string"}},
+                        },
+                    },
                 },
-                "required": ["app"]
+                "required": ["app"],
             }
             debug_print("Using fallback schema based on official structure")
             return fallback_schema
@@ -1071,41 +1243,45 @@ class StackHawkMCPServer:
     def _extract_schema_fields(self, schema: Dict[str, Any], path: str = "") -> Dict[str, Any]:
         """Extract all valid fields and their types from the schema"""
         fields = {}
-        
+
         if "properties" in schema:
             for field_name, field_schema in schema["properties"].items():
                 current_path = f"{path}.{field_name}" if path else field_name
-                
+
                 field_info = {
                     "type": field_schema.get("type", "object"),
                     "description": field_schema.get("description", ""),
                     "required": field_name in schema.get("required", []),
-                    "path": current_path
+                    "path": current_path,
                 }
-                
+
                 # Handle enums
                 if "enum" in field_schema:
                     field_info["enum"] = field_schema["enum"]
-                
+
                 # Handle nested objects
                 if field_schema.get("type") == "object" and "properties" in field_schema:
-                    field_info["nested_fields"] = self._extract_schema_fields(field_schema, current_path)
-                
+                    field_info["nested_fields"] = self._extract_schema_fields(
+                        field_schema, current_path
+                    )
+
                 # Handle arrays
                 if field_schema.get("type") == "array" and "items" in field_schema:
                     field_info["array_type"] = field_schema["items"].get("type", "object")
                     if field_schema["items"].get("type") == "object":
-                        field_info["array_fields"] = self._extract_schema_fields(field_schema["items"], f"{current_path}[]")
-                
+                        field_info["array_fields"] = self._extract_schema_fields(
+                            field_schema["items"], f"{current_path}[]"
+                        )
+
                 fields[field_name] = field_info
-        
+
         return fields
 
     def _validate_field_path(self, field_path: str, schema: Dict[str, Any]) -> Dict[str, Any]:
         """Validate if a field path exists in the schema and return its details"""
         path_parts = field_path.split(".")
         current_schema = schema
-        
+
         for part in path_parts:
             if part.endswith("[]"):
                 # Handle array access
@@ -1124,13 +1300,13 @@ class StackHawkMCPServer:
                     current_schema = current_schema["properties"][part]
                 else:
                     return {"exists": False, "error": f"Field '{part}' not found"}
-        
+
         return {
             "exists": True,
             "type": current_schema.get("type", "object"),
             "description": current_schema.get("description", ""),
             "enum": current_schema.get("enum"),
-            "required": field_path.split(".")[-1] in current_schema.get("required", [])
+            "required": field_path.split(".")[-1] in current_schema.get("required", []),
         }
 
     async def _get_organization_info(self, org_id: str) -> Dict[str, Any]:
@@ -1146,7 +1322,7 @@ class StackHawkMCPServer:
                 "applications": apps_response.get("applications", []),
                 "totalTeams": teams_response.get("totalCount", 0),
                 "totalApplications": apps_response.get("totalCount", 0),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
         except Exception as e:
             debug_print(f"Error in _get_organization_info: {e}")
@@ -1163,10 +1339,7 @@ class StackHawkMCPServer:
 
             apps_response = await self.client.list_applications(org_id, **params)
 
-            return {
-                **apps_response,
-                "timestamp": datetime.now().isoformat()
-            }
+            return {**apps_response, "timestamp": datetime.now().isoformat()}
         except Exception as e:
             debug_print(f"Error in _list_applications: {e}")
             raise
@@ -1193,9 +1366,7 @@ class StackHawkMCPServer:
                     continue
                 # Get findings for this scan only
                 findings_response = await self.client._make_request(
-                    "GET",
-                    f"/api/v1/scan/{org_id}/{scan_id}/findings",
-                    params={"pageSize": 1000}
+                    "GET", f"/api/v1/scan/{org_id}/{scan_id}/findings", params={"pageSize": 1000}
                 )
                 findings = findings_response.get("findings", [])
                 for f in findings:
@@ -1208,8 +1379,7 @@ class StackHawkMCPServer:
             if kwargs.get("severity"):
                 severity = kwargs["severity"]
                 filtered_findings = [
-                    f for f in filtered_findings
-                    if f.get("findingRisk") == severity
+                    f for f in filtered_findings if f.get("findingRisk") == severity
                 ]
 
             # Summarize by severity
@@ -1224,14 +1394,16 @@ class StackHawkMCPServer:
             for sev in ["High", "Medium", "Low"]:
                 sev_findings = [f for f in filtered_findings if f.get("findingRisk") == sev]
                 for f in sev_findings[:2]:
-                    top_findings.append({
-                        "id": f.get("id"),
-                        "applicationId": f.get("applicationId"),
-                        "applicationName": f.get("applicationName"),
-                        "findingRisk": f.get("findingRisk"),
-                        "findingPluginName": f.get("findingPluginName"),
-                        "status": f.get("status")
-                    })
+                    top_findings.append(
+                        {
+                            "id": f.get("id"),
+                            "applicationId": f.get("applicationId"),
+                            "applicationName": f.get("applicationName"),
+                            "findingRisk": f.get("findingRisk"),
+                            "findingPluginName": f.get("findingPluginName"),
+                            "status": f.get("status"),
+                        }
+                    )
 
             return {
                 "organizationId": org_id,
@@ -1240,7 +1412,7 @@ class StackHawkMCPServer:
                 "severityBreakdown": severity_counts,
                 "topFindings": top_findings,
                 "timestamp": datetime.now().isoformat(),
-                "note": "Summarized: Only findings from the latest scan per app are included. Full lists omitted for LLM efficiency."
+                "note": "Summarized: Only findings from the latest scan per app are included. Full lists omitted for LLM efficiency.",
             }
         except Exception as e:
             debug_print(f"Error in _search_vulnerabilities: {e}")
@@ -1266,9 +1438,7 @@ class StackHawkMCPServer:
                 if not scan_id:
                     continue
                 findings_response = await self.client._make_request(
-                    "GET",
-                    f"/api/v1/scan/{org_id}/{scan_id}/findings",
-                    params={"pageSize": 1000}
+                    "GET", f"/api/v1/scan/{org_id}/{scan_id}/findings", params={"pageSize": 1000}
                 )
                 findings = findings_response.get("findings", [])
                 latest_findings.extend(findings)
@@ -1285,13 +1455,13 @@ class StackHawkMCPServer:
                 "generatedAt": datetime.now().isoformat(),
                 "overview": {
                     "totalApplications": len(applications),
-                    "totalFindings": len(latest_findings)
+                    "totalFindings": len(latest_findings),
                 },
                 "securityMetrics": {
                     "severityBreakdown": severity_counts,
-                    "totalVulnerabilities": len(latest_findings)
+                    "totalVulnerabilities": len(latest_findings),
                 },
-                "note": "Summarized: Only findings from the latest scan per app are included. Full lists omitted for LLM efficiency."
+                "note": "Summarized: Only findings from the latest scan per app are included. Full lists omitted for LLM efficiency.",
             }
         except Exception as e:
             debug_print(f"Error in _generate_security_dashboard_tool: {e}")
@@ -1316,18 +1486,22 @@ class StackHawkMCPServer:
                     latest_findings = []
                     for app in applications:
                         app_id = app["id"]
-                        scans_response = await self.client.list_scans(org_id, appIds=app_id, pageSize=1)
+                        scans_response = await self.client.list_scans(
+                            org_id, appIds=app_id, pageSize=1
+                        )
                         scans = scans_response.get("scans", [])
                         if not scans:
                             continue
-                        latest_scan = sorted(scans, key=lambda s: s.get("scanStart", ""), reverse=True)[0]
+                        latest_scan = sorted(
+                            scans, key=lambda s: s.get("scanStart", ""), reverse=True
+                        )[0]
                         scan_id = latest_scan.get("id")
                         if not scan_id:
                             continue
                         findings_response = await self.client._make_request(
                             "GET",
                             f"/api/v1/scan/{org_id}/{scan_id}/findings",
-                            params={"pageSize": 1000}
+                            params={"pageSize": 1000},
                         )
                         findings = findings_response.get("findings", [])
                         latest_findings.extend(findings)
@@ -1344,18 +1518,16 @@ class StackHawkMCPServer:
                         "organizationName": org_name,
                         "totalFindings": len(latest_findings),
                         "severityBreakdown": severity_counts,
-                        "note": "Summarized: Only findings from the latest scan per app are included. Full lists omitted for LLM efficiency."
+                        "note": "Summarized: Only findings from the latest scan per app are included. Full lists omitted for LLM efficiency.",
                     }
 
                     summary_data["organizations"].append(org_summary)
 
                 except Exception as e:
                     debug_print(f"Could not get findings for org {org_id}: {e}")
-                    summary_data["organizations"].append({
-                        "organizationId": org_id,
-                        "organizationName": org_name,
-                        "error": str(e)
-                    })
+                    summary_data["organizations"].append(
+                        {"organizationId": org_id, "organizationName": org_name, "error": str(e)}
+                    )
 
             summary_data["generatedAt"] = datetime.now().isoformat()
             return json.dumps(summary_data, indent=2)
@@ -1368,32 +1540,36 @@ class StackHawkMCPServer:
         Recursively generate a minimal valid config block from a JSON schema.
         Only required fields are included, with sensible placeholders.
         """
+
         def _walk(subschema):
-            if 'type' in subschema:
-                if subschema['type'] == 'object':
+            if "type" in subschema:
+                if subschema["type"] == "object":
                     result = {}
-                    required = subschema.get('required', [])
-                    properties = subschema.get('properties', {})
+                    required = subschema.get("required", [])
+                    properties = subschema.get("properties", {})
                     for key in required:
                         if key in properties:
                             result[key] = _walk(properties[key])
                         else:
                             result[key] = "REQUIRED_VALUE"
                     return result
-                elif subschema['type'] == 'array':
-                    items = subschema.get('items', {})
+                elif subschema["type"] == "array":
+                    items = subschema.get("items", {})
                     return [_walk(items)] if items else []
-                elif subschema['type'] == 'string':
+                elif subschema["type"] == "string":
                     return "REQUIRED_STRING"
-                elif subschema['type'] == 'number' or subschema['type'] == 'integer':
+                elif subschema["type"] == "number" or subschema["type"] == "integer":
                     return 0
-                elif subschema['type'] == 'boolean':
+                elif subschema["type"] == "boolean":
                     return False
             # fallback
             return "REQUIRED_VALUE"
+
         return _walk(schema)
 
-    async def _create_stackhawk_config(self, application_id: str, app_name: str, host: str, port: int, **kwargs) -> Dict[str, Any]:
+    async def _create_stackhawk_config(
+        self, application_id: str, app_name: str, host: str, port: int, **kwargs
+    ) -> Dict[str, Any]:
         """
         Create a new StackHawk YAML configuration with best practices, using the latest schema for required fields.
         """
@@ -1402,28 +1578,35 @@ class StackHawkMCPServer:
             environment = kwargs.get("environment", "dev")
             protocol = kwargs.get("protocol", "https")
             # Build the host URL
-            host_url = f"{protocol}://{host}:{port}" if port != (443 if protocol == "https" else 80) else f"{protocol}://{host}"
+            host_url = (
+                f"{protocol}://{host}:{port}"
+                if port != (443 if protocol == "https" else 80)
+                else f"{protocol}://{host}"
+            )
 
             # Fetch the latest schema
             schema = await self._get_schema()
             # Generate minimal config from schema
             minimal_config = self._generate_minimal_config(schema)
 
-            # Fill in required values for 'app'
-            if "app" in minimal_config:
-                minimal_config["app"]["applicationId"] = application_id
-                minimal_config["app"]["env"] = environment
-                minimal_config["app"]["host"] = host_url
+            # Always ensure the app section exists with required HawkScan fields
+            if "app" not in minimal_config or not isinstance(minimal_config.get("app"), dict):
+                minimal_config["app"] = {}
+            minimal_config["app"]["applicationId"] = application_id
+            minimal_config["app"]["env"] = environment
+            minimal_config["app"]["host"] = host_url
 
             # Optionally add tags and hawk config if present in minimal config
             if "tags" in schema.get("properties", {}):
                 minimal_config["tags"] = [
                     {"name": "environment", "value": environment},
-                    {"name": "application", "value": app_name.lower().replace(" ", "-")}
+                    {"name": "application", "value": app_name.lower().replace(" ", "-")},
                 ]
             if "hawk" in minimal_config:
                 # Optionally add some best-practice defaults for hawk
-                minimal_config["hawk"].setdefault("spider", {"base": True, "ajax": False, "maxDurationMinutes": 30})
+                minimal_config["hawk"].setdefault(
+                    "spider", {"base": True, "ajax": False, "maxDurationMinutes": 30}
+                )
                 minimal_config["hawk"].setdefault("scan", {"maxDurationMinutes": 60, "threads": 10})
                 minimal_config["hawk"].setdefault("startupTimeoutMinutes", 5)
                 minimal_config["hawk"].setdefault("failureThreshold", "high")
@@ -1434,10 +1617,26 @@ class StackHawkMCPServer:
             print(f"[DEBUG] Writing config to: {abs_config_path}")
             with open(abs_config_path, "w") as f:
                 f.write(yaml_content)
-            return {"success": True, "config_path": abs_config_path, "yaml": yaml_content}
+            return {
+                "success": True,
+                "config_path": abs_config_path,
+                "yaml": yaml_content,
+                "next_steps": [
+                    "Validate the config: use 'validate_stackhawk_config' with the generated YAML or run 'hawk validate config "
+                    + abs_config_path
+                    + "'",
+                    "Run a scan: use 'run_stackhawk_scan' or run 'hawk scan "
+                    + abs_config_path
+                    + "' from the CLI",
+                ],
+            }
         except Exception as e:
             print(f"[DEBUG] Error writing config: {e}")
-            return {"success": False, "error": str(e)}
+            return {
+                "success": False,
+                "error": str(e),
+                "fix_suggestion": "Check that the target directory is writable. You can also create the config manually.",
+            }
 
     async def _validate_stackhawk_config(self, yaml_content: str) -> Dict[str, Any]:
         """Validate a StackHawk YAML configuration against the schema"""
@@ -1450,7 +1649,8 @@ class StackHawkMCPServer:
                     "valid": False,
                     "error_type": "YAML_PARSE_ERROR",
                     "error": str(e),
-                    "message": "Invalid YAML syntax"
+                    "message": "Invalid YAML syntax",
+                    "fix_suggestion": "Check the YAML syntax for indentation or formatting errors. Use 'create_stackhawk_config' to generate a valid config.",
                 }
 
             # Get the schema
@@ -1459,37 +1659,73 @@ class StackHawkMCPServer:
             # Validate against schema
             try:
                 validate(instance=config_data, schema=schema)
+
+                # Check for fields required by HawkScan to actually run
+                runnable_errors = []
+                app_config = config_data.get("app", {})
+
+                if not app_config:
+                    runnable_errors.append(
+                        "Missing 'app' section. HawkScan requires app.applicationId, app.host, and app.env to run."
+                    )
+                else:
+                    if not app_config.get("applicationId"):
+                        runnable_errors.append(
+                            "Missing 'app.applicationId'. Get this from setup_stackhawk_for_project or the StackHawk dashboard."
+                        )
+                    if not app_config.get("host"):
+                        runnable_errors.append(
+                            "Missing 'app.host'. Set this to the URL of your running application (e.g., https://myapp.com)."
+                        )
+                    if not app_config.get("env"):
+                        runnable_errors.append(
+                            "Missing 'app.env'. Set this to your environment name (e.g., dev, staging, production)."
+                        )
+
+                if runnable_errors:
+                    return {
+                        "valid": False,
+                        "error_type": "MISSING_REQUIRED_FIELDS",
+                        "errors": runnable_errors,
+                        "message": "Configuration is missing fields required by HawkScan. "
+                        + " ".join(runnable_errors),
+                        "fix_suggestion": "Use 'setup_stackhawk_for_project' with host='https://your-app.com' to generate a complete configuration.",
+                        "cli_validation": "For additional validation, run 'hawk validate config <path-to-stackhawk.yml>' which validates against HawkScan's runtime requirements.",
+                    }
+
                 validation_result = {
                     "valid": True,
                     "message": "Configuration is valid and follows official StackHawk schema",
                     "config_summary": {
-                        "application_id": config_data.get("app", {}).get("applicationId"),
-                        "app_name": config_data.get("app", {}).get("name"),
-                        "environment": config_data.get("app", {}).get("env"),
-                        "host": config_data.get("app", {}).get("host"),
+                        "application_id": app_config.get("applicationId"),
+                        "app_name": app_config.get("name"),
+                        "environment": app_config.get("env"),
+                        "host": app_config.get("host"),
                         "has_hawk_config": "hawk" in config_data,
                         "has_hawk_addon": "hawkAddOn" in config_data,
                         "has_tags": "tags" in config_data,
-                        "has_authentication": "authentication" in config_data.get("app", {})
-                    }
+                        "has_authentication": "authentication" in app_config,
+                    },
+                    "cli_validation": "For additional validation, run 'hawk validate config <path-to-stackhawk.yml>' which validates against HawkScan's runtime requirements.",
                 }
 
                 # Additional validation checks
                 warnings = []
-                
-                # Check for common issues
-                app_config = config_data.get("app", {})
                 hawk_config = config_data.get("hawk", {})
-                
+
                 if not app_config.get("description"):
                     warnings.append("Consider adding a description for better documentation")
-                
+
                 if not hawk_config.get("spider", {}).get("base"):
-                    warnings.append("Consider enabling base spider for traditional web applications")
-                
+                    warnings.append(
+                        "Consider enabling base spider for traditional web applications"
+                    )
+
                 if hawk_config.get("scan", {}).get("maxDurationMinutes", 0) > 120:
-                    warnings.append("Scan duration is quite high (>2 hours), consider reducing for faster feedback")
-                
+                    warnings.append(
+                        "Scan duration is quite high (>2 hours), consider reducing for faster feedback"
+                    )
+
                 if warnings:
                     validation_result["warnings"] = warnings
 
@@ -1501,7 +1737,9 @@ class StackHawkMCPServer:
                     "error_type": "SCHEMA_VALIDATION_ERROR",
                     "error": str(e),
                     "message": f"Configuration does not match StackHawk schema: {e.message}",
-                    "path": " -> ".join(str(p) for p in e.path) if e.path else "unknown"
+                    "path": " -> ".join(str(p) for p in e.path) if e.path else "unknown",
+                    "fix_suggestion": "Check the schema with 'get_stackhawk_schema' for valid field names and types.",
+                    "cli_validation": "For additional validation, run 'hawk validate config <path-to-stackhawk.yml>' which validates against HawkScan's runtime requirements.",
                 }
 
         except Exception as e:
@@ -1510,7 +1748,8 @@ class StackHawkMCPServer:
                 "valid": False,
                 "error_type": "UNKNOWN_ERROR",
                 "error": str(e),
-                "message": "Unexpected error during validation"
+                "message": "Unexpected error during validation",
+                "fix_suggestion": "Try validating with 'hawk validate config <path-to-stackhawk.yml>' for more detailed error information.",
             }
 
     async def _get_stackhawk_schema(self, section: str = None, **kwargs) -> Dict[str, Any]:
@@ -1528,13 +1767,13 @@ class StackHawkMCPServer:
                         "section": section,
                         "fields": fields,
                         "total_fields": len(fields),
-                        "schema_url": "https://download.stackhawk.com/hawk/jsonschema/hawkconfig.json"
+                        "schema_url": "https://download.stackhawk.com/hawk/jsonschema/hawkconfig.json",
                     }
                 else:
                     return {
                         "error": f"Section '{section}' not found in schema",
                         "available_sections": list(schema.get("properties", {}).keys()),
-                        "suggestion": "Use one of the available sections"
+                        "suggestion": "Use one of the available sections",
                     }
             # Default: return full schema
             return {
@@ -1549,47 +1788,39 @@ class StackHawkMCPServer:
                     "app": "Application configuration section (required)",
                     "hawk": "HawkScan settings (optional)",
                     "hawkAddOn": "Add-ons and custom scripts (optional)",
-                    "tags": "Metadata tags (optional)"
+                    "tags": "Metadata tags (optional)",
                 },
                 "examples": {
                     "basic_config": {
                         "app": {
                             "applicationId": "your-app-id",
                             "env": "dev",
-                            "host": "http://localhost:3000"
+                            "host": "http://localhost:3000",
                         }
                     },
                     "with_scan_config": {
                         "app": {
                             "applicationId": "your-app-id",
                             "env": "prod",
-                            "host": "https://myapp.com"
+                            "host": "https://myapp.com",
                         },
                         "hawk": {
-                            "spider": {
-                                "base": True,
-                                "ajax": False
-                            },
-                            "scan": {
-                                "maxDurationMinutes": 60
-                            }
-                        }
-                    }
-                }
+                            "spider": {"base": True, "ajax": False},
+                            "scan": {"maxDurationMinutes": 60},
+                        },
+                    },
+                },
             }
         except Exception as e:
             debug_print(f"Error in _get_stackhawk_schema: {e}")
-            return {
-                "error": str(e),
-                "message": "Failed to retrieve schema"
-            }
+            return {"error": str(e), "message": "Failed to retrieve schema"}
 
     async def _validate_field_exists(self, field_path: str, **kwargs) -> Dict[str, Any]:
         """Check if a specific field path exists in the StackHawk schema and get its details"""
         try:
             schema = await self._get_schema()
             result = self._validate_field_path(field_path, schema)
-            
+
             if result["exists"]:
                 return {
                     "success": True,
@@ -1599,7 +1830,7 @@ class StackHawkMCPServer:
                     "description": result["description"],
                     "enum_values": result.get("enum"),
                     "required": result["required"],
-                    "message": f"Field '{field_path}' exists in the StackHawk schema"
+                    "message": f"Field '{field_path}' exists in the StackHawk schema",
                 }
             else:
                 return {
@@ -1608,17 +1839,26 @@ class StackHawkMCPServer:
                     "exists": False,
                     "error": result["error"],
                     "message": f"Field '{field_path}' does not exist in the StackHawk schema",
-                    "suggestion": "Use get_schema_fields to see all available fields"
+                    "suggestion": "Use get_schema_fields to see all available fields",
                 }
         except Exception as e:
             debug_print(f"Error in _validate_field_exists: {e}")
             return {
                 "success": False,
                 "error": str(e),
-                "message": "Failed to validate field existence"
+                "message": "Failed to validate field existence",
             }
 
-    async def _get_sensitive_data(self, target_type: str, target_id: str, org_id: str = None, data_type_filter: str = "All", include_details: bool = True, max_results: int = 100, **kwargs) -> Dict[str, Any]:
+    async def _get_sensitive_data(
+        self,
+        target_type: str,
+        target_id: str,
+        org_id: str = None,
+        data_type_filter: str = "All",
+        include_details: bool = True,
+        max_results: int = 100,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """
         Get sensitive data findings for a specific application or repository (asset-level).
         Use this for triage, remediation, or detailed review of a single app or repo.
@@ -1630,7 +1870,9 @@ class StackHawkMCPServer:
                 org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
             findings_params = {"pageSize": max_results}
             # Only one endpoint: /api/v1/org/{org_id}/sensitive-data
-            findings_response = await self.client.list_sensitive_data_findings(org_id, **findings_params)
+            findings_response = await self.client.list_sensitive_data_findings(
+                org_id, **findings_params
+            )
             findings = findings_response.get("sensitiveDataFindings", [])
             # Filter by target
             if target_type == "application":
@@ -1665,28 +1907,32 @@ class StackHawkMCPServer:
                 "findings": findings,
                 "dataTypeBreakdown": self._calculate_data_type_breakdown(findings),
                 "timestamp": datetime.now().isoformat(),
-                "note": f"These are {target_type}-specific sensitive data findings."
+                "note": f"These are {target_type}-specific sensitive data findings.",
             }
         except Exception as e:
             debug_print(f"Error in _get_sensitive_data: {e}")
             return {
                 "error": str(e),
                 "message": f"Failed to get {target_type} sensitive data",
-                f"{target_type}Id": target_id
+                f"{target_type}Id": target_id,
             }
 
-    async def _map_sensitive_data_surface(self, org_id: str, include_applications: bool = True, include_repositories: bool = True, risk_visualization: bool = True, **kwargs) -> Dict[str, Any]:
+    async def _map_sensitive_data_surface(
+        self,
+        org_id: str,
+        include_applications: bool = True,
+        include_repositories: bool = True,
+        risk_visualization: bool = True,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Map sensitive data exposure across repositories and applications (uses unified _get_sensitive_data)."""
         try:
             sensitive_data_surface = {
                 "organizationId": org_id,
                 "mapped_at": datetime.now().isoformat(),
-                "exposure_vectors": {
-                    "applications": [],
-                    "repositories": []
-                },
+                "exposure_vectors": {"applications": [], "repositories": []},
                 "risk_heatmap": {},
-                "data_type_distribution": {}
+                "data_type_distribution": {},
             }
             # Map application sensitive data
             if include_applications:
@@ -1699,7 +1945,7 @@ class StackHawkMCPServer:
                                 target_type="application",
                                 target_id=app["id"],
                                 org_id=org_id,
-                                max_results=50
+                                max_results=50,
                             )
                             findings = app_sensitive_data.get("findings", [])
                             exposure_vector = {
@@ -1708,11 +1954,17 @@ class StackHawkMCPServer:
                                 "type": "application",
                                 "environment": app.get("environment"),
                                 "sensitive_data_count": len(findings),
-                                "data_types": list(set(f.get("dataType") for f in findings if f.get("dataType")))
+                                "data_types": list(
+                                    set(f.get("dataType") for f in findings if f.get("dataType"))
+                                ),
                             }
-                            sensitive_data_surface["exposure_vectors"]["applications"].append(exposure_vector)
+                            sensitive_data_surface["exposure_vectors"]["applications"].append(
+                                exposure_vector
+                            )
                         except Exception as e:
-                            debug_print(f"Error getting sensitive data for app {app.get('id')}: {e}")
+                            debug_print(
+                                f"Error getting sensitive data for app {app.get('id')}: {e}"
+                            )
                 except Exception as e:
                     debug_print(f"Error mapping application sensitive data: {e}")
             # Map repository sensitive data
@@ -1726,7 +1978,7 @@ class StackHawkMCPServer:
                                 target_type="repository",
                                 target_id=repo["id"],
                                 org_id=org_id,
-                                max_results=50
+                                max_results=50,
                             )
                             findings = repo_sensitive_data.get("findings", [])
                             exposure_vector = {
@@ -1735,44 +1987,52 @@ class StackHawkMCPServer:
                                 "type": "repository",
                                 "status": repo.get("status"),
                                 "sensitive_data_count": len(findings),
-                                "data_types": list(set(f.get("dataType") for f in findings if f.get("dataType")))
+                                "data_types": list(
+                                    set(f.get("dataType") for f in findings if f.get("dataType"))
+                                ),
                             }
-                            sensitive_data_surface["exposure_vectors"]["repositories"].append(exposure_vector)
+                            sensitive_data_surface["exposure_vectors"]["repositories"].append(
+                                exposure_vector
+                            )
                         except Exception as e:
-                            debug_print(f"Error getting sensitive data for repo {repo.get('id')}: {e}")
+                            debug_print(
+                                f"Error getting sensitive data for repo {repo.get('id')}: {e}"
+                            )
                 except Exception as e:
                     debug_print(f"Error mapping repository sensitive data: {e}")
             # Generate risk heatmap
             if risk_visualization:
-                sensitive_data_surface["risk_heatmap"] = self._generate_sensitive_data_risk_heatmap(sensitive_data_surface["exposure_vectors"])
+                sensitive_data_surface["risk_heatmap"] = self._generate_sensitive_data_risk_heatmap(
+                    sensitive_data_surface["exposure_vectors"]
+                )
             # Calculate data type distribution
-            sensitive_data_surface["data_type_distribution"] = self._calculate_overall_data_type_distribution(sensitive_data_surface["exposure_vectors"])
+            sensitive_data_surface["data_type_distribution"] = (
+                self._calculate_overall_data_type_distribution(
+                    sensitive_data_surface["exposure_vectors"]
+                )
+            )
             return sensitive_data_surface
         except Exception as e:
             debug_print(f"Error in _map_sensitive_data_surface: {e}")
             return {
                 "error": str(e),
                 "message": "Failed to map sensitive data surface",
-                "organizationId": org_id
+                "organizationId": org_id,
             }
 
     # Helper methods for sensitive data analysis
     def _calculate_sensitive_data_risk_score(self, findings: List[Dict[str, Any]]) -> float:
         """Calculate risk score based on sensitive data findings"""
         risk_score = 0.0
-        
+
         # Weight different data types
-        data_type_weights = {
-            "PII": 1.0,
-            "PCI": 2.0,
-            "PHI": 3.0
-        }
-        
+        data_type_weights = {"PII": 1.0, "PCI": 2.0, "PHI": 3.0}
+
         for finding in findings:
             data_type = finding.get("dataType", "Other")
             weight = data_type_weights.get(data_type, 0.5)
             risk_score += weight
-        
+
         return min(risk_score, 100.0)
 
     def _calculate_data_type_breakdown(self, findings: List[Dict[str, Any]]) -> Dict[str, int]:
@@ -1785,32 +2045,32 @@ class StackHawkMCPServer:
             breakdown[data_type] += 1
         return breakdown
 
-    def _generate_sensitive_data_risk_heatmap(self, exposure_vectors: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+    def _generate_sensitive_data_risk_heatmap(
+        self, exposure_vectors: Dict[str, List[Dict[str, Any]]]
+    ) -> Dict[str, Any]:
         """Generate risk heatmap data for sensitive data exposure"""
-        heatmap = {
-            "high_risk": [],
-            "medium_risk": [],
-            "low_risk": []
-        }
-        
+        heatmap = {"high_risk": [], "medium_risk": [], "low_risk": []}
+
         for vector_type, vectors in exposure_vectors.items():
             for vector in vectors:
                 risk_level = self._assess_sensitive_data_risk(vector)
-                heatmap[f"{risk_level}_risk"].append({
-                    "id": vector.get("id"),
-                    "name": vector.get("name"),
-                    "type": vector_type,
-                    "sensitive_data_count": vector.get("sensitive_data_count", 0),
-                    "data_types": vector.get("data_types", [])
-                })
-        
+                heatmap[f"{risk_level}_risk"].append(
+                    {
+                        "id": vector.get("id"),
+                        "name": vector.get("name"),
+                        "type": vector_type,
+                        "sensitive_data_count": vector.get("sensitive_data_count", 0),
+                        "data_types": vector.get("data_types", []),
+                    }
+                )
+
         return heatmap
 
     def _assess_sensitive_data_risk(self, vector: Dict[str, Any]) -> str:
         """Assess risk level for sensitive data exposure"""
         data_count = vector.get("sensitive_data_count", 0)
         data_types = vector.get("data_types", [])
-        
+
         # High risk if PHI is present or high count of sensitive data
         if "PHI" in data_types or data_count > 10:
             return "high"
@@ -1819,10 +2079,12 @@ class StackHawkMCPServer:
         else:
             return "low"
 
-    def _calculate_overall_data_type_distribution(self, exposure_vectors: Dict[str, List[Dict[str, Any]]]) -> Dict[str, int]:
+    def _calculate_overall_data_type_distribution(
+        self, exposure_vectors: Dict[str, List[Dict[str, Any]]]
+    ) -> Dict[str, int]:
         """Calculate overall data type distribution across all vectors"""
         distribution = {}
-        
+
         for vector_type, vectors in exposure_vectors.items():
             for vector in vectors:
                 data_types = vector.get("data_types", [])
@@ -1830,7 +2092,7 @@ class StackHawkMCPServer:
                     if data_type not in distribution:
                         distribution[data_type] = 0
                     distribution[data_type] += 1
-        
+
         return distribution
 
     def _get_stackhawk_scan_instructions(self, config_path: str = "stackhawk.yml") -> str:
@@ -1890,8 +2152,23 @@ hawk scan -e HOST=https://your-app-domain.com
 """
         return instructions
 
-    async def _setup_stackhawk_for_project(self, org_id: str = None, app_name: str = None) -> dict:
-        """Detect project language/frameworks, find or create StackHawk app, and return config info."""
+    @staticmethod
+    def _parse_host_url(host_url: str) -> dict:
+        """Parse a host URL into protocol, hostname, and port components."""
+        from urllib.parse import urlparse
+
+        parsed = urlparse(host_url)
+        protocol = parsed.scheme or "https"
+        hostname = parsed.hostname or host_url
+        port = parsed.port
+        if port is None:
+            port = 443 if protocol == "https" else 80
+        return {"protocol": protocol, "hostname": hostname, "port": port}
+
+    async def _setup_stackhawk_for_project(
+        self, host: str, environment: str = "dev", org_id: str = None, app_name: str = None
+    ) -> dict:
+        """Detect project language/frameworks, find or create StackHawk app, and generate a complete stackhawk.yml config."""
         # 1. Detect language/frameworks
         detected = self._detect_project_language_and_frameworks()
         language = detected.get("language")
@@ -1903,7 +2180,10 @@ hawk scan -e HOST=https://your-app-domain.com
             user_info = await self.client.get_user_info()
             orgs = user_info["user"]["external"]["organizations"]
             if not orgs:
-                return {"error": "No organizations found for user."}
+                return {
+                    "error": "No organizations found for user.",
+                    "fix_suggestion": "Ensure your STACKHAWK_API_KEY belongs to an account with at least one organization.",
+                }
             org_id = orgs[0]["organization"]["id"]
 
         # 3. Use directory name as app_name if not provided
@@ -1913,33 +2193,44 @@ hawk scan -e HOST=https://your-app-domain.com
         # 4. List applications and check for existing app
         apps_response = await self.client.list_applications(org_id, pageSize=1000)
         applications = apps_response.get("applications", [])
-        found_app = next((a for a in applications if a.get("name", "").lower() == app_name.lower()), None)
-        config_path = "stackhawk.yml"
-        cli_instructions = self._get_stackhawk_scan_instructions(config_path)
+        found_app = next(
+            (a for a in applications if a.get("name", "").lower() == app_name.lower()), None
+        )
+
         if found_app:
             app_id = found_app.get("id")
-            return {
-                "success": True,
-                "applicationId": app_id,
-                "appName": app_name,
-                "orgId": org_id,
-                "language": language,
-                "frameworks": frameworks,
-                "techFlags": tech_flags,
-                "appResponse": found_app,
-                "note": "Application already exists in StackHawk. Use this info to generate stackhawk.yml.",
-                "appStatus": "found",
-                "cliInstructions": cli_instructions
-            }
+            app_status = "found"
+            app_response = found_app
+        else:
+            # 5. Create application if not found
+            app_resp = await self.client.create_application(
+                org_id, app_name, language, frameworks, tech_flags
+            )
+            app_id = app_resp.get("id")
+            if not app_id:
+                return {
+                    "error": "Failed to create application",
+                    "response": app_resp,
+                    "fix_suggestion": "Try creating the app manually with 'hawk create app' CLI or via the StackHawk dashboard at https://app.stackhawk.com.",
+                }
+            app_status = "created"
+            app_response = app_resp
 
-        # 5. Create application if not found
-        app_resp = await self.client.create_application(org_id, app_name, language, frameworks, tech_flags)
-        app_id = app_resp.get("id")
-        if not app_id:
-            return {"error": "Failed to create application", "response": app_resp}
+        # 6. Parse host URL and auto-generate config
+        parsed = self._parse_host_url(host)
+        config_result = await self._create_stackhawk_config(
+            application_id=app_id,
+            app_name=app_name,
+            host=parsed["hostname"],
+            port=parsed["port"],
+            environment=environment,
+            protocol=parsed["protocol"],
+        )
 
-        # 6. Return info for config generation
-        return {
+        config_path = config_result.get("config_path", "stackhawk.yml")
+        cli_instructions = self._get_stackhawk_scan_instructions(config_path)
+
+        result = {
             "success": True,
             "applicationId": app_id,
             "appName": app_name,
@@ -1947,11 +2238,28 @@ hawk scan -e HOST=https://your-app-domain.com
             "language": language,
             "frameworks": frameworks,
             "techFlags": tech_flags,
-            "appResponse": app_resp,
-            "note": "Application created in StackHawk. Use this info to generate stackhawk.yml.",
-            "appStatus": "created",
-            "cliInstructions": cli_instructions
+            "appResponse": app_response,
+            "appStatus": app_status,
+            "configGenerated": config_result.get("success", False),
+            "configPath": config_result.get("config_path"),
+            "configYaml": config_result.get("yaml"),
+            "cliInstructions": cli_instructions,
+            "next_steps": [
+                "Validate the config: use 'validate_stackhawk_config' with the generated YAML or run 'hawk validate config stackhawk.yml'",
+                "Ensure your application is running at " + host,
+                "Run a scan: use 'run_stackhawk_scan' or run 'hawk scan stackhawk.yml' from the CLI",
+            ],
         }
+
+        if not config_result.get("success"):
+            result["configError"] = config_result.get("error")
+            result["fix_suggestion"] = (
+                "Config generation failed. Use 'create_stackhawk_config' manually with application_id='"
+                + app_id
+                + "', host, and port."
+            )
+
+        return result
 
     async def run(self):
         """Run the MCP server"""
@@ -1966,10 +2274,9 @@ hawk scan -e HOST=https://your-app-domain.com
                         server_name="stackhawk-mcp",
                         server_version="1.0.0",
                         capabilities=self.server.get_capabilities(
-                            experimental_capabilities={},
-                            notification_options=NotificationOptions()
-                        )
-                    )
+                            experimental_capabilities={}, notification_options=NotificationOptions()
+                        ),
+                    ),
                 )
                 debug_print("MCP server run completed")
         except Exception as e:
@@ -2002,12 +2309,18 @@ hawk scan -e HOST=https://your-app-domain.com
                 if "flask-jwt" in reqs or "pyjwt" in reqs:
                     method = "jwt"
                     evidence.append("Found flask-jwt or pyjwt in requirements.txt")
-                elif "flask-login" in reqs or "django.contrib.auth" in reqs or "django-allauth" in reqs:
+                elif (
+                    "flask-login" in reqs
+                    or "django.contrib.auth" in reqs
+                    or "django-allauth" in reqs
+                ):
                     method = "form"
                     evidence.append("Found flask-login or django auth in requirements.txt")
                 elif "oauthlib" in reqs or "authlib" in reqs or "django-oauth-toolkit" in reqs:
                     method = "oauth"
-                    evidence.append("Found oauthlib/authlib/django-oauth-toolkit in requirements.txt")
+                    evidence.append(
+                        "Found oauthlib/authlib/django-oauth-toolkit in requirements.txt"
+                    )
                 elif "session" in reqs or "flask-session" in reqs or "django-session" in reqs:
                     method = "session"
                     evidence.append("Found session-related package in requirements.txt")
@@ -2018,6 +2331,7 @@ hawk scan -e HOST=https://your-app-domain.com
         pkg_path = os.path.join(project_root, "package.json")
         if method == "unknown" and os.path.exists(pkg_path):
             import json
+
             with open(pkg_path) as f:
                 try:
                     pkg = json.load(f)
@@ -2032,10 +2346,18 @@ hawk scan -e HOST=https://your-app-domain.com
                     elif "jsonwebtoken" in dep_keys or "jwt-simple" in dep_keys:
                         method = "jwt"
                         evidence.append("Found jsonwebtoken/jwt-simple in package.json")
-                    elif "oauth" in dep_keys or "passport-oauth" in dep_keys or "simple-oauth2" in dep_keys:
+                    elif (
+                        "oauth" in dep_keys
+                        or "passport-oauth" in dep_keys
+                        or "simple-oauth2" in dep_keys
+                    ):
                         method = "oauth"
                         evidence.append("Found oauth/passport-oauth/simple-oauth2 in package.json")
-                    elif "api-key" in dep_keys or "apikey" in dep_keys or "express-api-key" in dep_keys:
+                    elif (
+                        "api-key" in dep_keys
+                        or "apikey" in dep_keys
+                        or "express-api-key" in dep_keys
+                    ):
                         method = "apiKey"
                         evidence.append("Found api-key/apikey/express-api-key in package.json")
                 except Exception as e:
@@ -2064,12 +2386,15 @@ hawk scan -e HOST=https://your-app-domain.com
                             evidence.append(f"Found 'api_key' in {fname}")
         ask_user = method == "unknown"
         if ask_user:
-            evidence.append("No clear authentication method detected. Please specify your authentication type (e.g., form, jwt, oauth, session, apiKey).")
+            evidence.append(
+                "No clear authentication method detected. Please specify your authentication type (e.g., form, jwt, oauth, session, apiKey)."
+            )
         return {"method": method, "evidence": evidence, "ask_user": ask_user}
 
     def _find_stackhawk_config(self, start_dir: str = None) -> str:
         """Search up the directory tree for a stackhawk.yml or stackhawk.yaml file."""
         import os
+
         if not start_dir:
             start_dir = os.getcwd()
         current_dir = os.path.abspath(start_dir)
@@ -2087,20 +2412,21 @@ hawk scan -e HOST=https://your-app-domain.com
     def _detect_project_language_and_frameworks(self) -> dict:
         """Detect the programming language and frameworks used in the current project"""
         import os
-        
+
         language = "unknown"
         frameworks = []
-        
+
         # Check for common project files
         if os.path.exists("package.json"):
             language = "javascript"
             try:
                 with open("package.json", "r") as f:
                     import json
+
                     data = json.load(f)
                     dependencies = data.get("dependencies", {})
                     dev_dependencies = data.get("devDependencies", {})
-                    
+
                     if "express" in dependencies:
                         frameworks.append("express")
                     if "react" in dependencies:
@@ -2157,15 +2483,32 @@ hawk scan -e HOST=https://your-app-domain.com
                         frameworks.append("sinatra")
             except:
                 pass
-        
-        return {
-            "language": language,
-            "frameworks": frameworks
-        }
+        elif glob.glob("*.csproj") or glob.glob("*.sln") or glob.glob("*.fsproj"):
+            language = "csharp"
+            # Check for ASP.NET Core and Blazor in .csproj files
+            for csproj in glob.glob("*.csproj") + glob.glob("**/*.csproj", recursive=True):
+                try:
+                    with open(csproj, "r") as f:
+                        content = f.read()
+                        if "Microsoft.AspNetCore" in content:
+                            frameworks.append("aspnet-core")
+                        if "Microsoft.AspNetCore.Components" in content or "Blazor" in content:
+                            frameworks.append("blazor")
+                except:
+                    pass
+            # Deduplicate
+            frameworks = list(dict.fromkeys(frameworks))
 
+        return {"language": language, "frameworks": frameworks}
 
-
-    async def _analyze_sensitive_data_trends(self, org_id: str, analysis_period: str = "90d", include_applications: bool = True, include_repositories: bool = True, **kwargs) -> Dict[str, Any]:
+    async def _analyze_sensitive_data_trends(
+        self,
+        org_id: str,
+        analysis_period: str = "90d",
+        include_applications: bool = True,
+        include_repositories: bool = True,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """
         Analyze sensitive data exposure trends and changes over time for an organization.
         Provides time-based, asset-level trend analysis by application and repository.
@@ -2174,22 +2517,24 @@ hawk scan -e HOST=https://your-app-domain.com
         """
         try:
             # For trend analysis, we want comprehensive data
-            findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
+            findings_response = await self.client.list_sensitive_data_findings(
+                org_id, all_results=True
+            )
             findings = findings_response.get("sensitiveDataFindings", [])
 
             # Group findings by application and repository
             application_findings = {}
             repository_findings = {}
-            
+
             for finding in findings:
                 app_id = finding.get("applicationId")
                 repo_id = finding.get("repositoryId")
-                
+
                 if app_id and include_applications:
                     if app_id not in application_findings:
                         application_findings[app_id] = []
                     application_findings[app_id].append(finding)
-                
+
                 if repo_id and include_repositories:
                     if repo_id not in repository_findings:
                         repository_findings[repo_id] = []
@@ -2200,7 +2545,7 @@ hawk scan -e HOST=https://your-app-domain.com
                 "totalFindings": len(findings),
                 "dataTypeBreakdown": {},
                 "applicationTrends": [],
-                "repositoryTrends": []
+                "repositoryTrends": [],
             }
 
             # Data type breakdown
@@ -2213,11 +2558,13 @@ hawk scan -e HOST=https://your-app-domain.com
             # Application trends
             if include_applications:
                 for app_id, app_findings in application_findings.items():
-                    trends["applicationTrends"].append({
-                        "applicationId": app_id,
-                        "totalFindings": len(app_findings),
-                        "dataTypeBreakdown": {}
-                    })
+                    trends["applicationTrends"].append(
+                        {
+                            "applicationId": app_id,
+                            "totalFindings": len(app_findings),
+                            "dataTypeBreakdown": {},
+                        }
+                    )
                     for finding in app_findings:
                         data_type = finding.get("dataType", "Unknown")
                         if data_type not in trends["applicationTrends"][-1]["dataTypeBreakdown"]:
@@ -2227,11 +2574,13 @@ hawk scan -e HOST=https://your-app-domain.com
             # Repository trends
             if include_repositories:
                 for repo_id, repo_findings in repository_findings.items():
-                    trends["repositoryTrends"].append({
-                        "repositoryId": repo_id,
-                        "totalFindings": len(repo_findings),
-                        "dataTypeBreakdown": {}
-                    })
+                    trends["repositoryTrends"].append(
+                        {
+                            "repositoryId": repo_id,
+                            "totalFindings": len(repo_findings),
+                            "dataTypeBreakdown": {},
+                        }
+                    )
                     for finding in repo_findings:
                         data_type = finding.get("dataType", "Unknown")
                         if data_type not in trends["repositoryTrends"][-1]["dataTypeBreakdown"]:
@@ -2242,15 +2591,20 @@ hawk scan -e HOST=https://your-app-domain.com
                 "organizationId": org_id,
                 "analysisPeriod": analysis_period,
                 "trends": trends,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
         except Exception as e:
             debug_print(f"Error in _analyze_sensitive_data_trends: {e}")
             raise
 
-
-
-    async def _check_repository_attack_surface(self, repo_name: str = None, org_id: str = None, include_vulnerabilities: bool = True, include_apps: bool = True, **kwargs) -> Dict[str, Any]:
+    async def _check_repository_attack_surface(
+        self,
+        repo_name: str = None,
+        org_id: str = None,
+        include_vulnerabilities: bool = True,
+        include_apps: bool = True,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Check if a repository name exists in StackHawk attack surface and get security information"""
         try:
             # Get repo name and org_id using helper methods
@@ -2259,19 +2613,19 @@ hawk scan -e HOST=https://your-app-domain.com
 
             # Find matching repositories
             matching_repos = await self._find_matching_repositories(repo_name, org_id)
-            
+
             result = {
                 "repository_name": repo_name,
                 "organization_id": org_id,
                 "found_in_attack_surface": len(matching_repos) > 0,
                 "matching_repositories": matching_repos,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
-            
+
             if matching_repos:
                 repo = matching_repos[0]  # Take the first match
                 repo_id = repo["id"]
-                
+
                 # Get repository details with fallback
                 try:
                     repo_details = await self.client.get_repository_details(org_id, repo_id)
@@ -2280,13 +2634,15 @@ hawk scan -e HOST=https://your-app-domain.com
                     debug_print(f"Repository details endpoint not available: {e}")
                     result["repository_details"] = {
                         "note": "Repository details endpoint not available in API",
-                        "basic_info": repo
+                        "basic_info": repo,
                     }
-                
+
                 # Get security scan results if requested with fallback
                 if include_vulnerabilities:
                     try:
-                        scan_results = await self.client.get_repository_security_scan(org_id, repo_id)
+                        scan_results = await self.client.get_repository_security_scan(
+                            org_id, repo_id
+                        )
                         result["security_scan"] = scan_results
                     except Exception as e:
                         debug_print(f"Repository security scan endpoint not available: {e}")
@@ -2294,44 +2650,55 @@ hawk scan -e HOST=https://your-app-domain.com
                         result["security_scan"] = {
                             "note": "Repository-level security scanning not available",
                             "fallback_recommendation": "Check connected applications for security scan results",
-                            "error": str(e)
+                            "error": str(e),
                         }
-                
+
                 # Get connected applications if requested
                 if include_apps:
                     try:
                         # Get applications and find ones connected to this repository
                         apps_response = await self.client.list_applications(org_id, pageSize=1000)
                         applications = apps_response.get("applications", [])
-                        
+
                         connected_apps = []
                         for app in applications:
                             # Check if app is connected to this repository
                             # This is a simplified check - in reality you'd check app metadata or configuration
                             if repo_name.lower() in app.get("name", "").lower():
                                 connected_apps.append(app)
-                        
+
                         result["connected_applications"] = connected_apps
                         result["total_connected_apps"] = len(connected_apps)
                     except Exception as e:
                         debug_print(f"Could not get connected applications: {e}")
                         result["connected_applications"] = []
-                
-                result["recommendation"] = f"Repository '{repo_name}' is found in your StackHawk attack surface. Review the security findings and ensure proper monitoring is in place."
+
+                result["recommendation"] = (
+                    f"Repository '{repo_name}' is found in your StackHawk attack surface. Review the security findings and ensure proper monitoring is in place."
+                )
             else:
-                result["recommendation"] = f"Repository '{repo_name}' is not found in your StackHawk attack surface. Consider adding it for security monitoring if it contains application code."
-            
+                result["recommendation"] = (
+                    f"Repository '{repo_name}' is not found in your StackHawk attack surface. Consider adding it for security monitoring if it contains application code."
+                )
+
             return result
-            
+
         except Exception as e:
             debug_print(f"Error in _check_repository_attack_surface: {e}")
             return {
                 "error": str(e),
                 "repository_name": repo_name,
-                "message": "Failed to check repository attack surface"
+                "message": "Failed to check repository attack surface",
             }
 
-    async def _check_repository_sensitive_data(self, repo_name: str = None, org_id: str = None, data_type_filter: str = "All", include_remediation: bool = True, **kwargs) -> Dict[str, Any]:
+    async def _check_repository_sensitive_data(
+        self,
+        repo_name: str = None,
+        org_id: str = None,
+        data_type_filter: str = "All",
+        include_remediation: bool = True,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Check if a repository has sensitive data findings in StackHawk"""
         try:
             # Get repo name and org_id using helper methods
@@ -2340,101 +2707,135 @@ hawk scan -e HOST=https://your-app-domain.com
 
             # Find matching repositories
             matching_repos = await self._find_matching_repositories(repo_name, org_id)
-            
+
             result = {
                 "repository_name": repo_name,
                 "organization_id": org_id,
                 "found_in_stackhawk": len(matching_repos) > 0,
                 "has_sensitive_data": False,
                 "sensitive_data_findings": [],
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
-            
+
             if matching_repos:
                 repo = matching_repos[0]  # Take the first match
                 repo_id = repo["id"]
                 result["repository_id"] = repo_id
-                
+
                 # Get sensitive data findings for this repository with fallback
                 try:
-                    sensitive_data = await self.client.get_repository_sensitive_data(org_id, repo_id, pageSize=100)
+                    sensitive_data = await self.client.get_repository_sensitive_data(
+                        org_id, repo_id, pageSize=100
+                    )
                     findings = sensitive_data.get("sensitiveDataFindings", [])
-                    
+
                     # Apply data type filter
                     if data_type_filter != "All":
                         findings = [f for f in findings if f.get("dataType") == data_type_filter]
-                    
+
                     result["has_sensitive_data"] = len(findings) > 0
                     result["sensitive_data_findings"] = findings
                     result["total_findings"] = len(findings)
                     result["data_type_breakdown"] = self._calculate_data_type_breakdown(findings)
-                    
+
                     if include_remediation and findings:
                         result["remediation_recommendations"] = [
                             f"Review and secure {finding.get('dataType', 'Unknown')} data found at {finding.get('location', 'Unknown location')}"
                             for finding in findings[:5]  # Top 5 recommendations
                         ]
-                    
+
                     if findings:
-                        result["recommendation"] = f"Repository '{repo_name}' contains {len(findings)} sensitive data findings. Immediate review and remediation recommended."
+                        result["recommendation"] = (
+                            f"Repository '{repo_name}' contains {len(findings)} sensitive data findings. Immediate review and remediation recommended."
+                        )
                     else:
-                        result["recommendation"] = f"Repository '{repo_name}' is monitored by StackHawk but has no sensitive data findings detected."
-                        
+                        result["recommendation"] = (
+                            f"Repository '{repo_name}' is monitored by StackHawk but has no sensitive data findings detected."
+                        )
+
                 except Exception as e:
                     debug_print(f"Repository-level sensitive data endpoint not available: {e}")
                     # Fallback: Get org-wide sensitive data and filter by repository
                     try:
-                        org_sensitive_data = await self.client.list_sensitive_data_findings(org_id, pageSize=1000)
+                        org_sensitive_data = await self.client.list_sensitive_data_findings(
+                            org_id, pageSize=1000
+                        )
                         org_findings = org_sensitive_data.get("sensitiveDataFindings", [])
-                        
+
                         # Filter findings for this repository (by name matching)
                         repo_findings = [
-                            f for f in org_findings 
-                            if (f.get("repositoryId") == repo_id or 
-                                f.get("repositoryName", "").lower() == repo_name.lower())
+                            f
+                            for f in org_findings
+                            if (
+                                f.get("repositoryId") == repo_id
+                                or f.get("repositoryName", "").lower() == repo_name.lower()
+                            )
                         ]
-                        
+
                         # Apply data type filter
                         if data_type_filter != "All":
-                            repo_findings = [f for f in repo_findings if f.get("dataType") == data_type_filter]
-                        
+                            repo_findings = [
+                                f for f in repo_findings if f.get("dataType") == data_type_filter
+                            ]
+
                         result["has_sensitive_data"] = len(repo_findings) > 0
                         result["sensitive_data_findings"] = repo_findings
                         result["total_findings"] = len(repo_findings)
-                        result["data_type_breakdown"] = self._calculate_data_type_breakdown(repo_findings)
+                        result["data_type_breakdown"] = self._calculate_data_type_breakdown(
+                            repo_findings
+                        )
                         result["fallback_used"] = True
-                        result["fallback_note"] = "Used organization-level sensitive data filtering as repository endpoint not available"
-                        
+                        result["fallback_note"] = (
+                            "Used organization-level sensitive data filtering as repository endpoint not available"
+                        )
+
                         if include_remediation and repo_findings:
                             result["remediation_recommendations"] = [
                                 f"Review and secure {finding.get('dataType', 'Unknown')} data found at {finding.get('location', 'Unknown location')}"
                                 for finding in repo_findings[:5]
                             ]
-                        
+
                         if repo_findings:
-                            result["recommendation"] = f"Repository '{repo_name}' contains {len(repo_findings)} sensitive data findings (via fallback analysis). Immediate review and remediation recommended."
+                            result["recommendation"] = (
+                                f"Repository '{repo_name}' contains {len(repo_findings)} sensitive data findings (via fallback analysis). Immediate review and remediation recommended."
+                            )
                         else:
-                            result["recommendation"] = f"Repository '{repo_name}' has no sensitive data findings detected (via fallback analysis)."
-                            
+                            result["recommendation"] = (
+                                f"Repository '{repo_name}' has no sensitive data findings detected (via fallback analysis)."
+                            )
+
                     except Exception as fallback_error:
-                        debug_print(f"Fallback sensitive data analysis also failed: {fallback_error}")
+                        debug_print(
+                            f"Fallback sensitive data analysis also failed: {fallback_error}"
+                        )
                         result["sensitive_data_error"] = str(e)
                         result["fallback_error"] = str(fallback_error)
-                        result["recommendation"] = f"Repository '{repo_name}' is in StackHawk but sensitive data analysis failed. Repository-level endpoints may not be available in API."
+                        result["recommendation"] = (
+                            f"Repository '{repo_name}' is in StackHawk but sensitive data analysis failed. Repository-level endpoints may not be available in API."
+                        )
             else:
-                result["recommendation"] = f"Repository '{repo_name}' is not found in StackHawk. Consider adding it for sensitive data monitoring."
-            
+                result["recommendation"] = (
+                    f"Repository '{repo_name}' is not found in StackHawk. Consider adding it for sensitive data monitoring."
+                )
+
             return result
-            
+
         except Exception as e:
             debug_print(f"Error in _check_repository_sensitive_data: {e}")
             return {
                 "error": str(e),
                 "repository_name": repo_name,
-                "message": "Failed to check repository sensitive data"
+                "message": "Failed to check repository sensitive data",
             }
 
-    async def _list_application_repository_connections(self, org_id: str = None, include_repo_details: bool = True, include_app_details: bool = True, filter_connected_only: bool = False, **kwargs) -> Dict[str, Any]:
+    async def _list_application_repository_connections(
+        self,
+        org_id: str = None,
+        include_repo_details: bool = True,
+        include_app_details: bool = True,
+        filter_connected_only: bool = False,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """List connections between StackHawk applications and code repositories"""
         try:
             # Get org_id using helper method
@@ -2443,67 +2844,73 @@ hawk scan -e HOST=https://your-app-domain.com
             # Get all applications and repositories
             apps_response = await self.client.list_applications(org_id, pageSize=1000)
             repos_response = await self.client.list_repositories(org_id, pageSize=1000)
-            
+
             applications = apps_response.get("applications", [])
             repositories = repos_response.get("repositories", [])
-            
+
             connections = []
             orphaned_apps = []
             orphaned_repos = []
-            
+
             # Analyze connections between apps and repos
             for app in applications:
                 app_name = app.get("name", "").lower()
                 connected_repos = []
-                
+
                 # Find repositories that might be connected to this app
                 for repo in repositories:
                     repo_name = repo.get("name", "").lower()
-                    
+
                     # Simple connection logic - can be enhanced based on actual StackHawk metadata
-                    if (app_name in repo_name or 
-                        repo_name in app_name or 
-                        self._calculate_name_similarity(app_name, repo_name) > 0.7):
+                    if (
+                        app_name in repo_name
+                        or repo_name in app_name
+                        or self._calculate_name_similarity(app_name, repo_name) > 0.7
+                    ):
                         connected_repos.append(repo)
-                
+
                 if connected_repos:
                     connection = {
                         "application": app,
                         "connected_repositories": connected_repos,
-                        "connection_strength": "high" if len(connected_repos) == 1 else "medium"
+                        "connection_strength": "high" if len(connected_repos) == 1 else "medium",
                     }
-                    
+
                     if include_app_details:
                         try:
                             app_details = await self.client.get_application(app["id"])
                             connection["application_details"] = app_details
                         except Exception as e:
                             debug_print(f"Could not get app details for {app['id']}: {e}")
-                    
+
                     if include_repo_details:
                         repo_details = []
                         for repo in connected_repos:
                             try:
-                                repo_detail = await self.client.get_repository_details(org_id, repo["id"])
+                                repo_detail = await self.client.get_repository_details(
+                                    org_id, repo["id"]
+                                )
                                 repo_details.append(repo_detail)
                             except Exception as e:
                                 debug_print(f"Could not get repo details for {repo['id']}: {e}")
                                 repo_details.append(repo)  # Use basic info if detailed fetch fails
                         connection["repository_details"] = repo_details
-                    
+
                     connections.append(connection)
                 elif not filter_connected_only:
                     orphaned_apps.append(app)
-            
+
             # Find repositories without app connections
             if not filter_connected_only:
                 connected_repo_ids = set()
                 for conn in connections:
                     for repo in conn["connected_repositories"]:
                         connected_repo_ids.add(repo["id"])
-                
-                orphaned_repos = [repo for repo in repositories if repo["id"] not in connected_repo_ids]
-            
+
+                orphaned_repos = [
+                    repo for repo in repositories if repo["id"] not in connected_repo_ids
+                ]
+
             result = {
                 "organization_id": org_id,
                 "total_applications": len(applications),
@@ -2514,34 +2921,40 @@ hawk scan -e HOST=https://your-app-domain.com
                     "connected_applications": len(connections),
                     "orphaned_applications": len(orphaned_apps),
                     "orphaned_repositories": len(orphaned_repos),
-                    "connection_coverage": (len(connections) / max(len(applications), 1)) * 100
+                    "connection_coverage": (len(connections) / max(len(applications), 1)) * 100,
                 },
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
-            
+
             if not filter_connected_only:
                 result["orphaned_applications"] = orphaned_apps
                 result["orphaned_repositories"] = orphaned_repos
-            
+
             # Add recommendations
             recommendations = []
             if orphaned_apps:
-                recommendations.append(f"Consider connecting {len(orphaned_apps)} orphaned applications to their corresponding repositories")
+                recommendations.append(
+                    f"Consider connecting {len(orphaned_apps)} orphaned applications to their corresponding repositories"
+                )
             if orphaned_repos:
-                recommendations.append(f"Consider creating applications for {len(orphaned_repos)} unmonitored repositories")
+                recommendations.append(
+                    f"Consider creating applications for {len(orphaned_repos)} unmonitored repositories"
+                )
             if result["coverage_stats"]["connection_coverage"] < 50:
-                recommendations.append("Low connection coverage detected. Review naming conventions and application-repository mappings")
-            
+                recommendations.append(
+                    "Low connection coverage detected. Review naming conventions and application-repository mappings"
+                )
+
             result["recommendations"] = recommendations
-            
+
             return result
-            
+
         except Exception as e:
             debug_print(f"Error in _list_application_repository_connections: {e}")
             return {
                 "error": str(e),
                 "message": "Failed to list application-repository connections",
-                "organization_id": org_id
+                "organization_id": org_id,
             }
 
     def _get_current_repository_name(self, repo_name: str = None) -> str:
@@ -2549,7 +2962,7 @@ hawk scan -e HOST=https://your-app-domain.com
         if repo_name:
             return repo_name
         return os.path.basename(os.getcwd())
-    
+
     async def _check_endpoint_availability(self, endpoint: str, method: str = "GET") -> bool:
         """Check if an API endpoint is available by making a test request"""
         try:
@@ -2562,49 +2975,57 @@ hawk scan -e HOST=https://your-app-domain.com
                 return False
             # For other errors (auth, permissions, etc.), assume endpoint exists
             return True
-    
+
     async def _get_organization_id(self, org_id: str = None) -> str:
         """Get organization ID from parameter or auto-detect from user info"""
         if org_id:
             return org_id
-        
+
         user_info = await self.client.get_user_info()
         organizations = user_info.get("user", {}).get("external", {}).get("organizations", [])
-        
+
         if not organizations:
             raise ValueError("No organizations found for user")
-        
+
         return organizations[0]["organization"]["id"]
-    
-    async def _find_matching_repositories(self, repo_name: str, org_id: str) -> List[Dict[str, Any]]:
+
+    async def _find_matching_repositories(
+        self, repo_name: str, org_id: str
+    ) -> List[Dict[str, Any]]:
         """Find repositories matching the given name (case-insensitive)"""
         repos_response = await self.client.list_repositories(org_id, pageSize=1000)
         repositories = repos_response.get("repositories", [])
-        
+
         # Find matching repositories (case-insensitive)
-        return [
-            repo for repo in repositories
-            if repo.get("name", "").lower() == repo_name.lower()
-        ]
+        return [repo for repo in repositories if repo.get("name", "").lower() == repo_name.lower()]
 
     def _calculate_name_similarity(self, name1: str, name2: str) -> float:
         """Calculate similarity between two names using simple string matching"""
         if not name1 or not name2:
             return 0.0
-        
+
         # Simple similarity calculation based on common words and substrings
-        words1 = set(name1.lower().split('-'))
-        words2 = set(name2.lower().split('-'))
-        
+        words1 = set(name1.lower().split("-"))
+        words2 = set(name2.lower().split("-"))
+
         if not words1 or not words2:
             return 0.0
-        
+
         common_words = words1.intersection(words2)
         total_words = words1.union(words2)
-        
+
         return len(common_words) / len(total_words) if total_words else 0.0
 
-    async def _get_comprehensive_sensitive_data_summary(self, org_id: str = None, time_period: str = "30d", include_trends: bool = True, include_critical_only: bool = False, include_recommendations: bool = True, group_by: str = "data_type", **kwargs) -> Dict[str, Any]:
+    async def _get_comprehensive_sensitive_data_summary(
+        self,
+        org_id: str = None,
+        time_period: str = "30d",
+        include_trends: bool = True,
+        include_critical_only: bool = False,
+        include_recommendations: bool = True,
+        group_by: str = "data_type",
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Get a comprehensive sensitive data summary combining multiple analysis approaches"""
         try:
             # Get org_id using helper method
@@ -2612,17 +3033,21 @@ hawk scan -e HOST=https://your-app-domain.com
 
             # Get all sensitive data findings
             if time_period == "all":
-                findings_response = await self.client.list_sensitive_data_findings(org_id, all_results=True)
+                findings_response = await self.client.list_sensitive_data_findings(
+                    org_id, all_results=True
+                )
             else:
-                findings_response = await self.client.list_sensitive_data_findings(org_id, pageSize=1000)
-            
+                findings_response = await self.client.list_sensitive_data_findings(
+                    org_id, pageSize=1000
+                )
+
             findings = findings_response.get("sensitiveDataFindings", [])
-            
+
             # Filter for critical findings only if requested
             if include_critical_only:
                 critical_data_types = ["PII", "PCI", "PHI"]
                 findings = [f for f in findings if f.get("dataType") in critical_data_types]
-            
+
             # Group findings based on the group_by parameter
             grouped_findings = {}
             for finding in findings:
@@ -2634,11 +3059,11 @@ hawk scan -e HOST=https://your-app-domain.com
                     key = finding.get("repositoryId", "Unknown")
                 else:
                     key = finding.get("dataType", "Unknown")
-                
+
                 if key not in grouped_findings:
                     grouped_findings[key] = []
                 grouped_findings[key].append(finding)
-            
+
             # Build comprehensive summary
             summary = {
                 "organization_id": org_id,
@@ -2650,61 +3075,86 @@ hawk scan -e HOST=https://your-app-domain.com
                 "grouped_summary": {},
                 "overall_risk_score": self._calculate_sensitive_data_risk_score(findings),
                 "data_type_breakdown": self._calculate_data_type_breakdown(findings),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
-            
+
             # Create grouped summary
             for group_key, group_findings in grouped_findings.items():
                 summary["grouped_summary"][group_key] = {
                     "count": len(group_findings),
                     "data_types": list(set(f.get("dataType", "Unknown") for f in group_findings)),
                     "risk_score": self._calculate_sensitive_data_risk_score(group_findings),
-                    "applications": list(set(f.get("applicationId") for f in group_findings if f.get("applicationId"))),
-                    "repositories": list(set(f.get("repositoryId") for f in group_findings if f.get("repositoryId")))
+                    "applications": list(
+                        set(
+                            f.get("applicationId") for f in group_findings if f.get("applicationId")
+                        )
+                    ),
+                    "repositories": list(
+                        set(f.get("repositoryId") for f in group_findings if f.get("repositoryId"))
+                    ),
                 }
-            
+
             # Add trend analysis if requested
             if include_trends:
                 try:
-                    trend_analysis = await self._analyze_sensitive_data_trends(org_id, analysis_period="90d", include_applications=True, include_repositories=True)
+                    trend_analysis = await self._analyze_sensitive_data_trends(
+                        org_id,
+                        analysis_period="90d",
+                        include_applications=True,
+                        include_repositories=True,
+                    )
                     summary["trend_analysis"] = trend_analysis.get("trends", {})
                 except Exception as e:
                     debug_print(f"Could not include trend analysis: {e}")
                     summary["trend_analysis"] = {"error": str(e)}
-            
+
             # Add recommendations if requested
             if include_recommendations:
                 recommendations = []
-                
+
                 # Critical findings recommendations
-                critical_count = len([f for f in findings if f.get("dataType") in ["PII", "PCI", "PHI"]])
+                critical_count = len(
+                    [f for f in findings if f.get("dataType") in ["PII", "PCI", "PHI"]]
+                )
                 if critical_count > 0:
-                    recommendations.append(f"Immediate attention required: {critical_count} critical sensitive data findings detected")
-                
+                    recommendations.append(
+                        f"Immediate attention required: {critical_count} critical sensitive data findings detected"
+                    )
+
                 # High-volume data types
                 for data_type, type_findings in grouped_findings.items():
                     if len(type_findings) > 10:
-                        recommendations.append(f"High volume of {data_type} findings ({len(type_findings)}) - consider implementing automated remediation")
-                
+                        recommendations.append(
+                            f"High volume of {data_type} findings ({len(type_findings)}) - consider implementing automated remediation"
+                        )
+
                 # Coverage recommendations
-                unique_apps = len(set(f.get("applicationId") for f in findings if f.get("applicationId")))
-                unique_repos = len(set(f.get("repositoryId") for f in findings if f.get("repositoryId")))
-                
+                unique_apps = len(
+                    set(f.get("applicationId") for f in findings if f.get("applicationId"))
+                )
+                unique_repos = len(
+                    set(f.get("repositoryId") for f in findings if f.get("repositoryId"))
+                )
+
                 if unique_apps > 0:
-                    recommendations.append(f"Sensitive data detected across {unique_apps} applications - ensure consistent data handling policies")
+                    recommendations.append(
+                        f"Sensitive data detected across {unique_apps} applications - ensure consistent data handling policies"
+                    )
                 if unique_repos > 0:
-                    recommendations.append(f"Sensitive data detected across {unique_repos} repositories - review code scanning configurations")
-                
+                    recommendations.append(
+                        f"Sensitive data detected across {unique_repos} repositories - review code scanning configurations"
+                    )
+
                 summary["recommendations"] = recommendations
-            
+
             return summary
-            
+
         except Exception as e:
             debug_print(f"Error in _get_comprehensive_sensitive_data_summary: {e}")
             return {
                 "error": str(e),
                 "message": "Failed to generate comprehensive sensitive data summary",
-                "organization_id": org_id
+                "organization_id": org_id,
             }
 
 
@@ -2734,6 +3184,7 @@ async def main():
     except Exception as e:
         debug_print(f"Server error: {e}")
         import traceback
+
         debug_print(f"Traceback: {traceback.format_exc()}")
         raise
     finally:
