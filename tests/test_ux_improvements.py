@@ -339,6 +339,31 @@ async def test_setup_tool_auto_generates_config():
 
 
 @pytest.mark.asyncio
+async def test_run_scan_returns_install_instructions_when_cli_missing():
+    """run_stackhawk_scan returns install instructions when hawk CLI is not found"""
+    import tempfile, os, yaml, asyncio
+    from stackhawk_mcp.server import StackHawkClient
+
+    # Create a minimal config file so config-search succeeds
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', prefix='stackhawk', delete=False, dir='.') as f:
+        yaml.dump({"app": {"applicationId": "test-id", "env": "dev", "host": "http://localhost:3000"}}, f)
+        config_path = f.name
+
+    try:
+        client = StackHawkClient(api_key="fake-key")
+        # Mock create_subprocess_exec to raise FileNotFoundError (hawk not installed)
+        with patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError("[Errno 2] No such file or directory: 'hawk'")):
+            result = await client.run_stackhawk_scan(config_path)
+        assert not result.get("success")
+        assert "install_instructions" in result
+        assert "hawk" in result["install_instructions"].lower()
+    finally:
+        os.unlink(config_path)
+        if hasattr(client, '_client') and client._client:
+            await client._client.aclose()
+
+
+@pytest.mark.asyncio
 async def test_setup_tool_creates_new_app_and_config():
     """setup_stackhawk_for_project should create app then generate config."""
     server = StackHawkMCPServer("mock-api-key")

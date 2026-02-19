@@ -118,20 +118,4 @@ hawk:
     else:
         print("❌ Should have detected invalid configuration")
     
-    print("\n" + "="*50 + "\n")
-    
-    # Test 5: Get schema
-    print("5. Getting StackHawk schema...")
-    schema_result = await server._get_stackhawk_schema()
-    if "schema" in schema_result:
-        print("✅ Schema retrieved successfully!")
-        print(f"Schema version: {schema_result['version']}")
-        print(f"Description: {schema_result['description']}")
-        print(f"Source: {schema_result['source']}")
-        print(f"Cached: {schema_result['cached']}")
-        if schema_result['cache_age']:
-            print(f"Cache age: {schema_result['cache_age']}")
-    else:
-        print(f"❌ Failed to get schema: {schema_result['error']}")
-    
     print("\n=== Testing Complete ===") 

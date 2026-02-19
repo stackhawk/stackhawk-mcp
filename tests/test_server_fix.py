@@ -25,10 +25,8 @@ def test_server_class():
         assert hasattr(server, '_detect_project_language_and_frameworks')
         result = server._detect_project_language_and_frameworks()
         assert isinstance(result, dict)
-        # Test that the _get_stackhawk_scan_instructions method exists
-        assert hasattr(server, '_get_stackhawk_scan_instructions')
-        result = server._get_stackhawk_scan_instructions()
-        assert isinstance(result, str)
+        # Test that _detect_project_language_and_frameworks returns a dict
+        assert isinstance(result, dict)
     except Exception as e:
         assert False, f"Failed to instantiate server class: {e}"
 

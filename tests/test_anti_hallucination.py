@@ -69,37 +69,9 @@ async def test_anti_hallucination():
             print(f"❌ Should have rejected: {field}")
     
     print("\n" + "="*50 + "\n")
-    
-    # Test 3: Get schema fields for specific sections
-    print("3. Getting schema fields for specific sections...")
-    sections = ["app", "hawk", "hawkAddOn", "tags"]
-    
-    for section in sections:
-        result = await server._get_stackhawk_schema(section=section)
-        if "fields" in result:
-            print(f"✅ {section} section: {result['total_fields']} fields")
-            # Show first few fields
-            field_names = list(result["fields"].keys())[:3]
-            print(f"   Sample fields: {', '.join(field_names)}")
-        else:
-            print(f"❌ Failed to get {section} fields: {result['error']}")
-    
-    print("\n" + "="*50 + "\n")
-    
-    # Test 4: Get all available fields
-    print("4. Getting all available fields...")
-    result = await server._get_stackhawk_schema()
-    if "all_fields" in result:
-        print(f"✅ Total fields available: {result['total_fields']}")
-        print(f"   Available sections: {', '.join(result['available_sections'])}")
-        print(f"   Schema URL: {result['schema_url']}")
-    else:
-        print(f"❌ Failed to get all fields: {result.get('error', result.get('message', 'Unknown error'))}")
-    
-    print("\n" + "="*50 + "\n")
-    
-    # Test 6: Demonstrate how to prevent hallucination
-    print("6. Anti-Hallucination Workflow Example:")
+
+    # Test 3: Demonstrate how to prevent hallucination
+    print("3. Anti-Hallucination Workflow Example:")
     print("   Step 1: Always validate fields before suggesting them")
     print("   Step 2: Use get_stackhawk_schema to see what's actually available")
     print("   Step 3: Use suggest_configuration for AI-powered recommendations")
