@@ -60,6 +60,12 @@ Thumbs.db
 # Output
 output/
 
+# StackHawk config (generated per-project by setup_stackhawk_for_project)
+stackhawk.yml
+stackhawk.yaml
+stackhawk*.yml
+stackhawk*.yaml
+
 # Temporary validation and test files
 test_new_tools.py
 test_output.txt

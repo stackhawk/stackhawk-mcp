@@ -1,5 +1,0 @@
-tags:
-- name: environment
-  value: prod
-- name: application
-  value: secure-app
