@@ -3,7 +3,7 @@
 **Current Version: 1.2.2**
 _Requires Python 3.10 or higher_
 
-A Model Context Protocol (MCP) server for integrating with StackHawk's security scanning platform. Provides security analytics, YAML configuration management, sensitive data/threat surface analysis, and anti-hallucination tools for LLMs.
+A Model Context Protocol (MCP) server for integrating with StackHawk's security scanning platform. Helps developers set up StackHawk, run security scans, and triage findings to fix vulnerabilities — all from within an LLM-powered IDE or chat.
 
 ---
 
@@ -12,23 +12,21 @@ A Model Context Protocol (MCP) server for integrating with StackHawk's security 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
-- [Available Tools & API](#available-tools--api)
-- [YAML & Anti-Hallucination](#yaml--anti-hallucination)
-- [Sensitive Data & Threat Surface](#sensitive-data--threat-surface)
+- [Available Tools](#available-tools)
 - [Testing & Development](#testing--development)
 - [Example Configurations](#example-configurations)
+- [Integrating with LLMs and IDEs](#integrating-with-llms-and-ides)
 - [Contributing](#contributing)
 - [License](#license)
-- [Integrating with LLMs and IDEs](#integrating-with-llms-and-ides)
 
 ---
 
 ## Features
-- **Security Analytics:** Organization, application, and vulnerability tools
-- **YAML Configuration Tools:** Creation, validation, schema reference, anti-hallucination field validation
-- **Sensitive Data & Threat Surface Analysis:** Repository, application, and data exposure mapping
+- **Setup:** Detect your project, create a StackHawk application, and generate a ready-to-scan `stackhawk.yml`
+- **Scan:** Run StackHawk scans directly from your IDE or chat (with install help if the CLI is missing)
+- **Triage:** Get actionable findings at or above your failure threshold for remediation
+- **Validate:** Check YAML configs against the official schema and validate field paths to prevent hallucination
 - **Custom User-Agent:** All API calls include a versioned `User-Agent` header
-- **Comprehensive Test Suite:** Automated tests for all major features
 
 ---
 
@@ -83,7 +81,7 @@ pytest
 
 ### Integrating with LLMs and IDEs
 
-StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-powered developer environments, enabling security analytics, YAML validation, and anti-hallucination features directly in your workflow.
+StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-powered developer environments, enabling security scanning setup, YAML validation, and vulnerability triage directly in your workflow.
 
 #### Cursor (AI Coding Editor)
 - **Setup:**
@@ -163,7 +161,7 @@ StackHawk MCP can be used as a tool provider for AI coding assistants and LLM-po
   - Add StackHawk MCP as a tool provider or extension in your IDE, pointing to the local or remote MCP server endpoint.
   - Configure environment variables as needed.
 - **Usage:**
-  - Invoke security analytics, YAML validation, or sensitive data tools directly from the IDE's command palette or tool integration panel.
+  - Invoke setup, scanning, validation, and triage tools directly from the IDE's command palette or tool integration panel.
 
 #### General Tips
 - Ensure the MCP server is running and accessible from your LLM or IDE environment.
@@ -235,61 +233,36 @@ Note that the `mcp-servers` block in the StackHawk Onboarding Agent definition r
 
 ---
 
-## Available Tools & API
+## Available Tools
 
-### Security Analytics
-- **Organization Info:** Get details about StackHawk organizations
-- **Application Management:** List/search applications with security status
-- **Vulnerability Search:** Search for vulnerabilities across applications
-- **Security Dashboard:** Generate executive dashboards
-- **Vulnerability Reporting:** Generate detailed reports and analysis
-- **Trend Analysis:** Analyze vulnerability trends
-- **Critical Findings:** Get high-priority findings
-- **Executive Summaries:** Generate executive-level summaries
+The MCP server exposes 7 tools organized around the developer workflow:
 
-### YAML Configuration Management
-- **Create Config:** Generate StackHawk YAML config files
-- **Validate Config:** Validate YAML against the official schema
-- **Schema Reference:** Fetch the latest StackHawk schema
-- **Schema Caching:** 24-hour TTL, manual refresh
-- **Anti-Hallucination:** Field validation tools
-
-### Sensitive Data & Threat Surface
-- **Sensitive Data Reporting:** Organization, app, and repo-level
-- **Trend Analysis:** Track sensitive data exposure
-- **Critical Data Findings:** Identify high-risk data
-- **Surface Mapping:** Map sensitive data and threat surfaces
+| Phase | Tool | Description |
+|-------|------|-------------|
+| **Discover** | `get_organization_info` | Get org details, teams, and applications |
+| **Discover** | `list_applications` | List applications in an organization |
+| **Setup** | `setup_stackhawk_for_project` | Detect language, find/create app, generate `stackhawk.yml` |
+| **Validate** | `validate_stackhawk_config` | Validate YAML against the official StackHawk schema |
+| **Validate** | `validate_field_exists` | Check if a field path is valid in the schema (anti-hallucination) |
+| **Scan** | `run_stackhawk_scan` | Run a StackHawk scan via the CLI (returns install help if CLI is missing) |
+| **Triage** | `get_app_findings_for_triage` | Get findings at/above the configured failure threshold |
 
 ### Example Tool Usage
 ```python
-# Get organization info
-org_info = await server._get_organization_info(org_id="your-org-id")
+# Set up StackHawk for a project
+result = await server.call_tool("setup_stackhawk_for_project", {"host": "http://localhost:3000"})
 
 # Validate a YAML config
-result = await server._validate_stackhawk_config(yaml_content="...")
+result = await server.call_tool("validate_stackhawk_config", {"yaml_content": "..."})
 
-# Get application vulnerabilities
-vulns = await server._get_application_vulnerabilities(app_id="your-app-id")
+# Run a scan
+result = await server.call_tool("run_stackhawk_scan", {})
+
+# Get findings to triage
+result = await server.call_tool("get_app_findings_for_triage", {})
 ```
 
----
-
-## YAML & Anti-Hallucination
-- **Field Validation:** Prevents LLMs from suggesting invalid fields
-- **Schema Reference:** Always up-to-date with the official StackHawk schema
-- **AI Suggestions:** Use `suggest_configuration` for YAML recommendations
-- **YAML Validation:** Validate any config with `validate_stackhawk_config`
-
 **Official Schema URL:** [https://download.stackhawk.com/hawk/jsonschema/hawkconfig.json](https://download.stackhawk.com/hawk/jsonschema/hawkconfig.json)
-
----
-
-## Sensitive Data & Threat Surface
-- **Data Type Categorization:** PII, PCI, PHI
-- **Risk Assessment:** Risk scoring, levels, and factors
-- **Exposure Mapping:** Application and repository analysis
-- **Trend Analysis:** Time-based, app, repo, and data type trends
-- **Surface Mapping:** Entry points, risk heatmap, exposure analysis
 
 ---
 
@@ -302,8 +275,8 @@ pytest
 
 ### Running Individual Tests
 ```bash
-pytest tests/test_sensitive_data.py
-pytest tests/test_repository_analysis.py
+pytest tests/test_ux_improvements.py
+pytest tests/test_user_scenarios.py
 ```
 
 ### Code Formatting
