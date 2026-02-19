@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Python-based MCP (Model Context Protocol) server that provides security analytics and YAML configuration management for StackHawk's security scanning platform. The server integrates with StackHawk's API to provide vulnerability analysis, sensitive data reporting, and YAML configuration validation.
+This is a Python-based MCP (Model Context Protocol) server that helps developers set up StackHawk, run security scans, and triage findings to fix vulnerabilities. The server integrates with StackHawk's API and exposes 7 focused tools for the setup → scan → triage → fix workflow.
 
 ## Development Commands
 
@@ -64,12 +64,13 @@ export STACKHAWK_API_KEY="your-api-key-here"
 - **`stackhawk_mcp/__main__.py`**: CLI entry point and argument parsing
 - **`stackhawk_mcp/__init__.py`**: Package initialization and version management
 
-### Key Features
+### Key Features (7 MCP Tools)
 
-1. **Security Analytics Tools**: Organization info, application management, vulnerability search, trend analysis
-2. **YAML Configuration Management**: Create, validate, and manage StackHawk YAML configs with schema validation
-3. **Sensitive Data & Threat Surface Analysis**: Repository analysis, data exposure mapping, risk assessment
-4. **Anti-Hallucination**: Field validation to prevent LLMs from suggesting invalid configuration fields
+1. **Discover**: `get_organization_info`, `list_applications` — orient the LLM on org/app context
+2. **Setup**: `setup_stackhawk_for_project` — detect language, find/create app, generate stackhawk.yml
+3. **Validate**: `validate_stackhawk_config`, `validate_field_exists` — schema validation and anti-hallucination
+4. **Scan**: `run_stackhawk_scan` — run scans via CLI (with install help fallback)
+5. **Triage**: `get_app_findings_for_triage` — get findings at/above failure threshold for remediation
 
 ### API Integration
 
