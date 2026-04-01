@@ -52,13 +52,13 @@ jobs:
           pip install .
       - name: Generate GitHub App token
         id: generate_token
-        # SECURITY FIX (Finding 2 - TeamPCP audit): Pinned to commit SHA instead of
-        # mutable @v2 tag. Mutable tags can be silently redirected to malicious commits.
-        # Pin: v2.1.0 -> sha 3beb63f4bd073e61482598c45c71c1019b59b73a
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2.1.0
+        # SECURITY FIX (Finding 2 - TeamPCP audit): Using official GitHub-maintained action
+        # instead of third-party tibdex. Pinned to SHA for supply chain safety.
+        # actions/create-github-app-token v3 -> sha f8d387b68d61c58ab83c6c016672934102569859
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
-          app_id: ${{ secrets.HAWKY_APP_ID }}
-          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.HAWKY_APP_ID }}
+          private-key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
@@ -90,12 +90,12 @@ jobs:
           fetch-depth: 0
       - name: Generate GitHub App token
         id: generate_token
-        # SECURITY FIX (Finding 2 - TeamPCP audit): Pinned to commit SHA.
-        # Pin: v2.1.0 -> sha 3beb63f4bd073e61482598c45c71c1019b59b73a
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2.1.0
+        # SECURITY FIX (Finding 2 - TeamPCP audit): Using official GitHub-maintained action.
+        # actions/create-github-app-token v3 -> sha f8d387b68d61c58ab83c6c016672934102569859
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
-          app_id: ${{ secrets.HAWKY_APP_ID }}
-          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.HAWKY_APP_ID }}
+          private-key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Set up git for pulling latest
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
@@ -137,12 +137,12 @@ jobs:
           pip install .
       - name: Generate GitHub App token
         id: generate_token
-        # SECURITY FIX (Finding 2 - TeamPCP audit): Pinned to commit SHA.
-        # Pin: v2.1.0 -> sha 3beb63f4bd073e61482598c45c71c1019b59b73a
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2.1.0
+        # SECURITY FIX (Finding 2 - TeamPCP audit): Using official GitHub-maintained action.
+        # actions/create-github-app-token v3 -> sha f8d387b68d61c58ab83c6c016672934102569859
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
-          app_id: ${{ secrets.HAWKY_APP_ID }}
-          private_key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.HAWKY_APP_ID }}
+          private-key: ${{ secrets.HAWKY_APP_PRIVATE_KEY }}
       - name: Set up git for pushing
         run: |
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git
