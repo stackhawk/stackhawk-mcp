@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install .
+      - name: Run mypy
+        run: |
+          mypy stackhawk_mcp/
       - name: Run tests
         run: |
           pytest --maxfail=1 --disable-warnings

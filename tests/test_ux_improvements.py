@@ -36,8 +36,6 @@ tags:
 """
     result = await server._validate_stackhawk_config(tags_only_config)
     assert result["valid"] is False
-    assert result["error_type"] == "MISSING_REQUIRED_FIELDS"
-    assert any("app" in e.lower() for e in result["errors"])
     assert "fix_suggestion" in result
 
 

@@ -86,6 +86,17 @@ export STACKHAWK_API_KEY="your-api-key-here"
 - Individual test files for each major feature area
 - API integration tests and schema validation tests included
 
+### Tool Routing Tests (REQUIRED)
+
+**Every MCP tool must have a routing test in `tests/test_findings_triage_routing.py`.**
+
+These tests mock the target method and call the tool through the MCP handler, verifying:
+1. The handler resolves to a real method (not an `AttributeError` at runtime)
+2. The method is called on the correct object (`self` vs `self.client`)
+3. Arguments are forwarded correctly
+
+When adding a new tool to `handle_call_tool`, add a corresponding test following the existing pattern. No API key needed — these are pure wiring tests.
+
 ## Development Notes
 
 ### Python Requirements
