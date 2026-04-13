@@ -41,7 +41,7 @@ logger = logging.getLogger("stackhawk-mcp")
 STACKHAWK_MCP_VERSION = __version__
 
 
-def debug_print(message):
+def debug_print(message: str) -> None:
     """Print debug messages to stderr for Claude Desktop"""
     print(f"[DEBUG] {message}", file=sys.stderr, flush=True)
 
@@ -96,7 +96,7 @@ class StackHawkClient:
         self._client: Optional[httpx.AsyncClient] = None
         self._authenticated = False
 
-    async def _get_client(self):
+    async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client"""
         if self._client is None:
             self._client = httpx.AsyncClient(
@@ -104,7 +104,7 @@ class StackHawkClient:
             )
         return self._client
 
-    async def _ensure_authenticated(self):
+    async def _ensure_authenticated(self) -> None:
         """Ensure we have a valid access token"""
         if (
             not self._authenticated
@@ -113,7 +113,7 @@ class StackHawkClient:
         ):
             await self._authenticate()
 
-    async def _authenticate(self):
+    async def _authenticate(self) -> None:
         """Authenticate with the StackHawk API"""
         try:
             client = await self._get_client()
@@ -133,7 +133,7 @@ class StackHawkClient:
             debug_print(f"Authentication failed: {e}")
             raise
 
-    async def _make_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
+    async def _make_request(self, method: str, endpoint: str, **kwargs: Any) -> Dict[str, Any]:
         """Make an authenticated request to the StackHawk API"""
         await self._ensure_authenticated()
 
@@ -146,7 +146,8 @@ class StackHawkClient:
             client = await self._get_client()
             response = await client.request(method, url, headers=headers, **kwargs)
             response.raise_for_status()
-            return response.json()
+            result: Dict[str, Any] = response.json()
+            return result
         except httpx.HTTPStatusError as e:
             debug_print(f"API request failed: {e.response.status_code} {e.response.text}")
             raise
@@ -158,11 +159,11 @@ class StackHawkClient:
         """Get current user information"""
         return await self._make_request("GET", "/api/v1/user")
 
-    async def list_applications(self, org_id: str, **params) -> Dict[str, Any]:
+    async def list_applications(self, org_id: str, **params: Any) -> Dict[str, Any]:
         """List applications for an organization"""
         return await self._make_request("GET", f"/api/v2/org/{org_id}/apps", params=params)
 
-    async def list_environments(self, org_id: str, **params) -> Dict[str, Any]:
+    async def list_environments(self, org_id: str, **params: Any) -> Dict[str, Any]:
         """List environments for an organization"""
         return await self._make_request("GET", f"/api/v2/org/{org_id}/envs", params=params)
 
@@ -170,12 +171,12 @@ class StackHawkClient:
         """Get details for a specific application"""
         return await self._make_request("GET", f"/api/v1/app/{app_id}")
 
-    async def list_scans(self, org_id: str, **params) -> Dict[str, Any]:
+    async def list_scans(self, org_id: str, **params: Any) -> Dict[str, Any]:
         """List scans for an organization"""
         return await self._make_request("GET", f"/api/v1/scan/{org_id}", params=params)
 
     async def list_organization_findings(
-        self, org_id: str, all_results: bool = False, **params
+        self, org_id: str, all_results: bool = False, **params: Any
     ) -> Dict[str, Any]:
         """List organization-wide findings, with optional pagination for all results."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
@@ -186,7 +187,7 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=params)
 
     async def get_organization_findings_detailed(
-        self, org_id: str, all_results: bool = False, **params
+        self, org_id: str, all_results: bool = False, **params: Any
     ) -> Dict[str, Any]:
         """Get detailed organization findings with comprehensive filtering options and optional pagination."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
@@ -199,7 +200,7 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=default_params)
 
     async def get_application_findings(
-        self, app_id: str, org_id: str, all_results: bool = False, **params
+        self, app_id: str, org_id: str, all_results: bool = False, **params: Any
     ) -> Dict[str, Any]:
         """Get findings for a specific application, with optional pagination for all results."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
@@ -212,7 +213,7 @@ class StackHawkClient:
             return await self._make_request("GET", endpoint, params=default_params)
 
     async def get_application_findings_summary(
-        self, app_id: str, org_id: str, all_results: bool = False, **params
+        self, app_id: str, org_id: str, all_results: bool = False, **params: Any
     ) -> Dict[str, Any]:
         """Get summary of findings for a specific application, with optional pagination for all results."""
         endpoint = f"/api/v1/reports/org/{org_id}/findings"
@@ -224,7 +225,7 @@ class StackHawkClient:
         else:
             return await self._make_request("GET", endpoint, params=default_params)
 
-    async def list_teams(self, org_id: str, **params) -> Dict[str, Any]:
+    async def list_teams(self, org_id: str, **params: Any) -> Dict[str, Any]:
         """List teams for an organization"""
         return await self._make_request("GET", f"/api/v1/org/{org_id}/teams", params=params)
 
@@ -237,19 +238,20 @@ class StackHawkClient:
             client = await self._get_client()
             response = await client.get(schema_url)
             response.raise_for_status()
-            return response.json()
+            schema: Dict[str, Any] = response.json()
+            return schema
         except Exception as e:
             debug_print(f"Failed to fetch schema from {schema_url}: {e}")
             raise
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the HTTP client"""
         if self._client:
             await self._client.aclose()
 
     async def _fetch_all_pages(self, endpoint: str, params: dict) -> list:
         """Fetch all pages of findings from a paginated StackHawk API endpoint using integer pageToken."""
-        all_findings = []
+        all_findings: list[Dict[str, Any]] = []
         page_token = 0
         page_size = params.get("pageSize", 1000)
         page_count = 0
@@ -278,7 +280,7 @@ class StackHawkClient:
 
         return all_findings
 
-    async def _get_project_open_stackhawk_issues(self, config_path: str = None) -> dict:
+    async def _get_project_open_stackhawk_issues(self, config_path: str | None = None) -> dict:
         """Discover StackHawk config, extract applicationId, and summarize open issues for the app."""
         import os
         import yaml
@@ -328,7 +330,10 @@ class StackHawkClient:
                 "config_path": abs_config_path,
                 "applicationId": app_id,
                 "failureThreshold": failure_threshold or "High/Medium",
-                "open_issues_summary": self._calculate_severity_breakdown(filtered_findings),
+                "open_issues_summary": {
+                    sev: len([f for f in filtered_findings if f.get("findingRisk") == sev])
+                    for sev in ["High", "Medium", "Low"]
+                },
                 "totalOpenIssues": len(filtered_findings),
                 "openIssues": filtered_findings,
                 "note": "Returned issues are High, Medium, or at/above the configured failureThreshold (if set in hawk section) so chat can help fix them.",
@@ -351,12 +356,12 @@ class StackHawkClient:
         self,
         org_id: str,
         app_name: str,
-        language: str = None,
-        frameworks: list = None,
-        tech_flags: dict = None,
+        language: str | None = None,
+        frameworks: list | None = None,
+        tech_flags: dict | None = None,
     ) -> dict:
         """Create a new StackHawk application in the given org, and set tech flags if provided."""
-        payload = {
+        payload: dict = {
             "name": app_name,
         }
         if language:
@@ -449,6 +454,7 @@ class StackHawkClient:
         stdout_lines = []
         stderr_lines = []
         # Stream output
+        assert process.stdout is not None
         while True:
             line = await process.stdout.readline()
             if not line:
@@ -459,6 +465,7 @@ class StackHawkClient:
         # Wait for process to finish
         await process.wait()
         # Collect stderr
+        assert process.stderr is not None
         while True:
             line = await process.stderr.readline()
             if not line:
@@ -479,16 +486,16 @@ class StackHawkClient:
 
     async def _get_application_vulnerabilities(
         self,
-        app_id: str = None,
+        app_id: str | None = None,
         severity_filter: str = "All",
         include_remediation: bool = True,
         max_results: int = 100,
-        app_name: str = None,
+        app_name: str | None = None,
         triage_mode: bool = False,
-        failure_threshold: str = None,
-        config_path: str = None,
-        config_content: str = None,
-        **kwargs,
+        failure_threshold: str | None = None,
+        config_path: str | None = None,
+        config_content: str | None = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """Get vulnerabilities for a specific application, with optional triage filtering (at/above failure threshold)."""
         import os
@@ -565,9 +572,8 @@ class StackHawkClient:
             if not org_id:
                 user_info = await self.get_user_info()
                 org_id = user_info["user"]["external"]["organizations"][0]["organization"]["id"]
-            findings_params = {"pageSize": max_results}
             findings_response = await self.get_application_findings(
-                app_id, org_id, **findings_params
+                app_id, org_id, all_results=True
             )
             findings = findings_response.get("findings", [])
             # Apply severity filter if not triage_mode
@@ -593,7 +599,10 @@ class StackHawkClient:
                 "severityFilter": severity_filter,
                 "totalFindings": len(findings),
                 "findings": findings,
-                "severityBreakdown": self._calculate_severity_breakdown(findings),
+                "severityBreakdown": {
+                    sev: len([f for f in findings if f.get("findingRisk") == sev])
+                    for sev in ["High", "Medium", "Low"]
+                },
                 "timestamp": datetime.now().isoformat(),
                 "note": "These are application-specific vulnerabilities. Use triage_mode for CI/CD gating or remediation workflows.",
             }
@@ -609,6 +618,24 @@ class StackHawkClient:
                 "applicationId": app_id,
             }
 
+    def _find_stackhawk_config(self, start_dir: str | None = None) -> str | None:
+        """Search up the directory tree for a stackhawk.yml or stackhawk.yaml file."""
+        import os
+
+        if not start_dir:
+            start_dir = os.getcwd()
+        current_dir = os.path.abspath(start_dir)
+        while True:
+            for fname in ["stackhawk.yml", "stackhawk.yaml"]:
+                candidate = os.path.join(current_dir, fname)
+                if os.path.isfile(candidate):
+                    return candidate
+            parent = os.path.dirname(current_dir)
+            if parent == current_dir:
+                break
+            current_dir = parent
+        return None
+
 
 class StackHawkMCPServer:
     """StackHawk MCP Server implementation"""
@@ -623,7 +650,7 @@ class StackHawkMCPServer:
         self._setup_handlers()
         debug_print("StackHawkMCPServer initialized")
 
-    def _setup_handlers(self):
+    def _setup_handlers(self) -> None:
         """Set up MCP server handlers"""
         debug_print("Setting up MCP handlers...")
 
@@ -634,7 +661,7 @@ class StackHawkMCPServer:
             try:
                 return [
                     Resource(
-                        uri="stackhawk://auth/user",
+                        uri=types.AnyUrl("stackhawk://auth/user"),
                         name="Current User",
                         description="Information about the authenticated user and their organizations",
                         mimeType="application/json",
@@ -811,7 +838,7 @@ class StackHawkMCPServer:
                     result = await self.client.run_stackhawk_scan(config_path)
                     return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
                 elif name == "get_app_findings_for_triage":
-                    result = await self._get_application_vulnerabilities(
+                    result = await self.client._get_application_vulnerabilities(
                         app_id=arguments.get("app_id"),
                         config_path=arguments.get("config_path"),
                         config_content=arguments.get("config_content"),
@@ -832,8 +859,9 @@ class StackHawkMCPServer:
         debug_print("MCP handlers setup complete")
         self._call_tool_handler = handle_call_tool
 
-    async def call_tool(self, name: str, arguments: dict):
-        return await self._call_tool_handler(name, arguments)
+    async def call_tool(self, name: str, arguments: dict) -> list[types.TextContent]:
+        result: list[types.TextContent] = await self._call_tool_handler(name, arguments)
+        return result
 
     async def _get_schema(self) -> Dict[str, Any]:
         """Get the StackHawk YAML schema with caching"""
@@ -978,7 +1006,7 @@ class StackHawkMCPServer:
             debug_print(f"Error in _get_organization_info: {e}")
             raise
 
-    async def _list_applications(self, org_id: str, **kwargs) -> Dict[str, Any]:
+    async def _list_applications(self, org_id: str, **kwargs: Any) -> Dict[str, Any]:
         """List applications with basic information"""
         try:
             params = {k: v for k, v in kwargs.items() if v is not None}
@@ -1000,7 +1028,7 @@ class StackHawkMCPServer:
         Only required fields are included, with sensible placeholders.
         """
 
-        def _walk(subschema):
+        def _walk(subschema: dict) -> Any:
             if "type" in subschema:
                 if subschema["type"] == "object":
                     result = {}
@@ -1024,10 +1052,11 @@ class StackHawkMCPServer:
             # fallback
             return "REQUIRED_VALUE"
 
-        return _walk(schema)
+        result: dict = _walk(schema)
+        return result
 
     async def _create_stackhawk_config(
-        self, application_id: str, app_name: str, host: str, port: int, **kwargs
+        self, application_id: str, app_name: str, host: str, port: int, **kwargs: Any
     ) -> Dict[str, Any]:
         """
         Create a new StackHawk YAML configuration with best practices, using the latest schema for required fields.
@@ -1211,7 +1240,7 @@ class StackHawkMCPServer:
                 "fix_suggestion": "Try validating with 'hawk validate config <path-to-stackhawk.yml>' for more detailed error information.",
             }
 
-    async def _validate_field_exists(self, field_path: str, **kwargs) -> Dict[str, Any]:
+    async def _validate_field_exists(self, field_path: str, **kwargs: Any) -> Dict[str, Any]:
         """Check if a specific field path exists in the StackHawk schema and get its details"""
         try:
             schema = await self._get_schema()
@@ -1259,7 +1288,11 @@ class StackHawkMCPServer:
         return {"protocol": protocol, "hostname": hostname, "port": port}
 
     async def _setup_stackhawk_for_project(
-        self, host: str, environment: str = "dev", org_id: str = None, app_name: str = None
+        self,
+        host: str,
+        environment: str = "dev",
+        org_id: str | None = None,
+        app_name: str | None = None,
     ) -> dict:
         """Detect project language/frameworks, find or create StackHawk app, and generate a complete stackhawk.yml config."""
         # 1. Detect language/frameworks
@@ -1350,7 +1383,7 @@ class StackHawkMCPServer:
 
         return result
 
-    async def run(self):
+    async def run(self) -> None:
         """Run the MCP server"""
         debug_print("Starting MCP server run...")
         try:
@@ -1372,13 +1405,14 @@ class StackHawkMCPServer:
             debug_print(f"Error in run: {e}")
             raise
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup resources"""
         debug_print("Cleaning up StackHawk client...")
         await self.client.close()
 
-    async def list_tools(self):
-        return await self._list_tools_handler()
+    async def list_tools(self) -> list[types.Tool]:
+        result: list[types.Tool] = await self._list_tools_handler()
+        return result
 
     def guess_authentication_method(self, project_root: str = ".") -> dict:
         """
@@ -1480,24 +1514,6 @@ class StackHawkMCPServer:
             )
         return {"method": method, "evidence": evidence, "ask_user": ask_user}
 
-    def _find_stackhawk_config(self, start_dir: str = None) -> str:
-        """Search up the directory tree for a stackhawk.yml or stackhawk.yaml file."""
-        import os
-
-        if not start_dir:
-            start_dir = os.getcwd()
-        current_dir = os.path.abspath(start_dir)
-        while True:
-            for fname in ["stackhawk.yml", "stackhawk.yaml"]:
-                candidate = os.path.join(current_dir, fname)
-                if os.path.isfile(candidate):
-                    return candidate
-            parent = os.path.dirname(current_dir)
-            if parent == current_dir:
-                break
-            current_dir = parent
-        return None
-
     def _detect_project_language_and_frameworks(self) -> dict:
         """Detect the programming language and frameworks used in the current project"""
         import os
@@ -1590,7 +1606,8 @@ class StackHawkMCPServer:
 
         return {"language": language, "frameworks": frameworks}
 
-async def main():
+
+async def main() -> None:
     """Main entry point"""
     debug_print("=== StackHawk MCP Server Starting ===")
 
